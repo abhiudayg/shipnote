@@ -11,15 +11,7 @@ UNTIL=$(date -u +%Y-%m-%dT%H:%M:%SZ)
 WORK=$(mktemp -d)
 trap 'rm -rf "$WORK"' EXIT
 
-QUERY='query($login: String!, $from: DateTime!, $to: DateTime!) {
-  user(login: $login) {
-    contributionsCollection(from: $from, to: $to) {
-      commitContributionsByRepository(maxRepositories: 100) {
-        repository { nameWithOwner visibility }
-      }
-    }
-  }
-}'
+QUERY="query(\$login: String!, \$from: DateTime!, \$to: DateTime!) { user(login: \$login) { contributionsCollection(from: \$from, to: \$to) { commitContributionsByRepository(maxRepositories: 100) { repository { nameWithOwner visibility } } } } }"
 
 gh api graphql -F login="$LOGIN" -F from="$SINCE" -F to="$UNTIL" -f query="$QUERY" \
   --jq '.data.user.contributionsCollection.commitContributionsByRepository[]

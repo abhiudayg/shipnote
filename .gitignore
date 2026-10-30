@@ -1,3 +1,5 @@
 .agent-brain-id
 .DS_Store
 dataset/
+.verify/artifacts/
+docs/PRD.md

@@ -73,7 +73,7 @@ scripts/export-commits.sh               discovery, clone, export
 
 ## Roadmap
 
-- Draft tweets and blog posts from the dataset, with each claim tied to a commit SHA.
+- Draft tweets and blog posts from the dataset, with each claim tied to a commit SHA. The design is in [docs/PRD.md](docs/PRD.md); agent and model settings are in [shipnote.example.toml](shipnote.example.toml).
 - Store per-day change summaries in agent-brain and pull them back as context during drafting.
 - Approval step before anything is published.
 

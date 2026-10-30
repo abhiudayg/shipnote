@@ -1,0 +1,8 @@
+[verify]
+commands = [
+  ".verify/run.sh",
+]
+
+[verify.default]
+command = [".verify/run.sh"]
+timeout_secs = 300

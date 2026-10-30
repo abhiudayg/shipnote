@@ -1,0 +1,44 @@
+# Copy to shipnote.toml and edit. shipnote.toml is not committed.
+
+[agent]
+provider = "agy"
+
+[agent.providers.agy]
+command = "agy"
+args = ["-p", "{prompt}", "--model", "{model}", "--effort", "{effort}"]
+prompt_mode = "arg"
+model = "gemini-3.8-flash-medium"
+effort = "medium"
+
+[agent.providers.claude]
+command = "claude"
+args = ["-p", "--model", "{model}", "--effort", "{effort}"]
+prompt_mode = "stdin"
+model = "claude-sonnet-5-5"
+effort = "medium"
+
+[dataset]
+archive_dir = "archive"
+repo_scope = "public"
+
+[selection]
+denylist_repos = []
+denylist_terms = []
+min_story_score = 0.6
+
+[context]
+token_budget = 4000
+
+[drafts]
+tweets_max = 3
+tweet_max_chars = 280
+blog_min_words = 600
+blog_max_words = 1200
+
+[media]
+tweet_size = "1200x675"
+blog_size = "1600x900"
+
+[tone]
+rules = []
+banned_topics = []
