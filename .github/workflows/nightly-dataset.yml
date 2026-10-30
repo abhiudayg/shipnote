@@ -1,0 +1,38 @@
+name: nightly-dataset
+
+on:
+  schedule:
+    - cron: '30 18 * * *'
+  workflow_dispatch:
+    inputs:
+      days:
+        description: Days of commits to export
+        default: '30'
+        required: false
+
+permissions:
+  contents: read
+
+jobs:
+  export:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Export last 7 days of commits
+        env:
+          DAYS: ${{ inputs.days || '30' }}
+          LOGIN: ${{ github.repository_owner }}
+          AUTHOR: ${{ vars.DATASET_AUTHOR }}
+          GH_TOKEN: ${{ github.token }}
+        run: scripts/export-commits.sh dataset
+
+      - name: Scan dataset for secrets
+        run: docker run --rm -v "$PWD/dataset:/scan" ghcr.io/gitleaks/gitleaks:v8.18.4 detect --no-git --source /scan --exit-code 1
+
+      - name: Upload dataset
+        uses: actions/upload-artifact@v4
+        with:
+          name: dataset-${{ github.run_id }}
+          path: dataset/
+          retention-days: 10
