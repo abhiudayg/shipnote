@@ -1,0 +1,64 @@
+---
+import '../styles/global.css';
+
+interface Props {
+  title: string;
+  description: string;
+}
+
+const { title, description } = Astro.props;
+const repo = 'https://github.com/abhiudayg/shipnote';
+const navItems = [
+  { label: 'How it works', href: '/how-it-works/' },
+  { label: 'Setup', href: '/setup/' },
+  { label: 'Roadmap', href: '/roadmap/' },
+  { label: 'Privacy', href: '/privacy/' },
+];
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content={description} />
+    <title>{title}</title>
+    <link rel="icon" href="/logo.svg" type="image/svg+xml" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+  </head>
+  <body class="min-h-screen antialiased">
+    <header class="border-b border-zinc-800">
+      <div class="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-y-3 px-5 py-4">
+        <a href="/" class="flex items-center gap-2.5 text-sm font-semibold">
+          <img src="/logo.svg" alt="" width="28" height="28" />
+          shipnote
+        </a>
+        <nav class="flex flex-wrap items-center gap-x-5 gap-y-2 text-sm text-zinc-400">
+          {navItems.map((item) => (
+            <a href={item.href} class="hover:text-white">{item.label}</a>
+          ))}
+          <a href={repo} class="hover:text-white">GitHub</a>
+        </nav>
+      </div>
+    </header>
+
+    <slot />
+
+    <footer class="border-t border-zinc-800 py-8 text-sm text-zinc-400">
+      <div class="mx-auto flex max-w-5xl flex-wrap justify-between gap-4 px-5">
+        <span>shipnote</span>
+        <nav class="flex flex-wrap gap-x-5 gap-y-2">
+          <a href={repo} class="hover:text-white">GitHub</a>
+          <a href="/setup/" class="hover:text-white">Setup</a>
+          <a href="/privacy/" class="hover:text-white">Privacy</a>
+          <a href="/roadmap/" class="hover:text-white">Roadmap</a>
+        </nav>
+      </div>
+    </footer>
+  </body>
+</html>

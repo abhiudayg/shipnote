@@ -3,3 +3,6 @@
 dataset/
 .verify/artifacts/
 docs/PRD.md
+website/node_modules/
+website/dist/
+website/.astro/

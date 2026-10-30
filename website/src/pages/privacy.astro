@@ -1,0 +1,38 @@
+---
+import Base from '../layouts/Base.astro';
+---
+
+<Base
+  title="Privacy: shipnote"
+  description="What shipnote collects, what it publishes, and how the secret scan protects your commits."
+>
+  <main class="mx-auto max-w-3xl px-5 pt-20 pb-24">
+    <h1 class="text-4xl font-semibold tracking-tight">Privacy</h1>
+    <p class="mt-4 text-lg text-zinc-400">What shipnote reads, what it publishes, and what it does not do.</p>
+
+    <h2 class="mt-14 text-2xl font-semibold">What it reads</h2>
+    <p class="mt-3 text-zinc-400">
+      The nightly job reads only public repositories where your account made commits in the window. Private repositories are excluded by the GitHub query itself.
+    </p>
+
+    <h2 class="mt-12 text-2xl font-semibold">What it publishes</h2>
+    <p class="mt-3 text-zinc-400">
+      The dataset is uploaded as a workflow artifact, which GitHub deletes after 10 days. Because it contains full diffs, anyone with read access to the repository can download it during that window. Keep secrets out of commits.
+    </p>
+
+    <h2 class="mt-12 text-2xl font-semibold">Secret scanning</h2>
+    <p class="mt-3 text-zinc-400">
+      Gitleaks scans the dataset before upload, and a finding fails the run. It catches common secret formats but is not a guarantee. A small allowlist covers known false positives, such as Go module checksums.
+    </p>
+
+    <h2 class="mt-12 text-2xl font-semibold">What the drafting step sends</h2>
+    <p class="mt-3 text-zinc-400">
+      When drafting runs, the selected commit data and context go to the agent provider you configure. shipnote does not send data to any other service, and no analytics or tracking scripts run on this site.
+    </p>
+
+    <h2 class="mt-12 text-2xl font-semibold">Nothing posts for you</h2>
+    <p class="mt-3 text-zinc-400">
+      shipnote never publishes to X, a blog, or any other platform. You review and approve each draft, then post it yourself.
+    </p>
+  </main>
+</Base>

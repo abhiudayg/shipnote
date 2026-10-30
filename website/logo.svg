@@ -1,9 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" role="img" aria-label="shipnote logo">
-  <rect width="256" height="256" rx="56" fill="#0F172A"/>
-  <rect x="64" y="52" width="112" height="152" rx="16" fill="#F8FAFC"/>
-  <rect x="88" y="90" width="64" height="12" rx="6" fill="#CBD5E1"/>
-  <rect x="88" y="116" width="64" height="12" rx="6" fill="#CBD5E1"/>
-  <rect x="88" y="142" width="40" height="12" rx="6" fill="#CBD5E1"/>
-  <path d="M120 226 L232 118 L186 226 L162 178 Z" fill="#38BDF8"/>
-  <path d="M162 178 L232 118 L186 226 Z" fill="#0EA5E9"/>
-</svg>

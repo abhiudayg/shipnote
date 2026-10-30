@@ -1,0 +1,75 @@
+---
+import Base from '../layouts/Base.astro';
+const repo = 'https://github.com/abhiudayg/shipnote';
+const steps = [
+  { title: 'Nightly dataset', body: 'A GitHub Action collects your public commits and diffs from the last 30 days.' },
+  { title: 'Grounded drafts', body: 'Each draft cites the commit SHAs it is based on. Claims without a matching commit are dropped.' },
+  { title: 'You approve', body: 'You review each draft with its evidence and decide what gets posted.' },
+];
+const features = [
+  { title: 'Every claim traced', body: 'Each factual statement links to the commit and file it came from.' },
+  { title: 'Nothing publishes itself', body: 'shipnote drafts. You approve and post. There is no auto-posting.' },
+  { title: 'Fork and run it', body: 'The nightly job runs on your own GitHub account with two settings.' },
+];
+---
+
+<Base
+  title="shipnote: Turn what you ship into posts you approve"
+  description="shipnote turns the work you ship into tweets and blog drafts. Every claim is tied to a commit, and nothing publishes without your approval."
+>
+  <main>
+    <section class="mx-auto max-w-5xl px-5 pt-24 pb-20 text-center">
+      <h1 class="mx-auto max-w-3xl text-5xl leading-[1.08] font-semibold tracking-tight md:text-6xl">
+        Turn what you ship into posts you approve.
+      </h1>
+      <p class="mx-auto mt-6 max-w-xl text-lg text-zinc-400">
+        shipnote reads your public commits each night and drafts tweets and blog posts from them. Every claim is tied to a commit, and nothing goes out until you approve it.
+      </p>
+      <div class="mt-10 flex flex-wrap justify-center gap-3">
+        <a href={repo} class="rounded-lg bg-white px-5 py-2.5 text-sm font-medium text-black hover:opacity-85">View on GitHub</a>
+        <a href="/setup/" class="rounded-lg border border-zinc-800 px-5 py-2.5 text-sm font-medium hover:border-zinc-600">Read the setup guide</a>
+      </div>
+    </section>
+
+    <section class="border-t border-zinc-800 py-20">
+      <div class="mx-auto max-w-5xl px-5">
+        <h2 class="text-3xl font-semibold tracking-tight">How it works</h2>
+        <ol class="mt-10 grid gap-4 md:grid-cols-3">
+          {steps.map((step, i) => (
+            <li class="rounded-xl border border-zinc-800 bg-zinc-950 p-6">
+              <span class="flex h-7 w-7 items-center justify-center rounded-full border border-zinc-800 text-xs text-sky-400">{i + 1}</span>
+              <h3 class="mt-4 font-semibold">{step.title}</h3>
+              <p class="mt-2 text-sm text-zinc-400">{step.body}</p>
+            </li>
+          ))}
+        </ol>
+        <a href="/how-it-works/" class="mt-8 inline-block text-sm text-sky-400 hover:text-sky-300">See the full pipeline →</a>
+      </div>
+    </section>
+
+    <section class="border-t border-zinc-800 py-20">
+      <div class="mx-auto max-w-5xl px-5">
+        <h2 class="text-3xl font-semibold tracking-tight">Built to stay honest</h2>
+        <div class="mt-10 grid gap-4 md:grid-cols-3">
+          {features.map((f) => (
+            <div class="rounded-xl border border-zinc-800 bg-zinc-950 p-6">
+              <h3 class="font-semibold">{f.title}</h3>
+              <p class="mt-2 text-sm text-zinc-400">{f.body}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+
+    <section class="border-t border-zinc-800 py-20">
+      <div class="mx-auto max-w-5xl px-5">
+        <h2 class="text-3xl font-semibold tracking-tight">Get started in four steps</h2>
+        <pre class="mt-8 overflow-x-auto rounded-xl border border-zinc-800 bg-zinc-950 p-5 font-mono text-sm text-zinc-400"><code>1. Fork github.com/abhiudayg/shipnote
+2. Enable Actions in your fork
+3. Set the repository variable DATASET_AUTHOR to your git name
+4. Run the nightly-dataset workflow once with days = 30</code></pre>
+        <a href="/setup/" class="mt-6 inline-block text-sm text-sky-400 hover:text-sky-300">Full setup guide →</a>
+      </div>
+    </section>
+  </main>
+</Base>

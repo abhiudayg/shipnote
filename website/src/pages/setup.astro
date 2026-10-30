@@ -1,0 +1,48 @@
+---
+import Base from '../layouts/Base.astro';
+const repo = 'https://github.com/abhiudayg/shipnote';
+---
+
+<Base
+  title="Setup: shipnote"
+  description="Fork shipnote, set one variable, and run the nightly commit dataset on your own GitHub account."
+>
+  <main class="mx-auto max-w-3xl px-5 pt-20 pb-24">
+    <h1 class="text-4xl font-semibold tracking-tight">Setup</h1>
+    <p class="mt-4 text-lg text-zinc-400">
+      The nightly job runs on your own GitHub account. You need a fork, two settings, and one manual run.
+    </p>
+
+    <h2 class="mt-14 text-2xl font-semibold">1. Fork the repo</h2>
+    <p class="mt-3 text-zinc-400">
+      Fork <a href={repo} class="text-sky-400 hover:text-sky-300">abhiudayg/shipnote</a> on GitHub.
+    </p>
+
+    <h2 class="mt-12 text-2xl font-semibold">2. Enable Actions</h2>
+    <p class="mt-3 text-zinc-400">
+      Forks have GitHub Actions turned off. Open the Actions tab in your fork and enable workflows.
+    </p>
+
+    <h2 class="mt-12 text-2xl font-semibold">3. Set DATASET_AUTHOR</h2>
+    <p class="mt-3 text-zinc-400">
+      Add a repository variable named <code class="font-mono text-zinc-200">DATASET_AUTHOR</code> under Settings → Secrets and variables → Actions → Variables. Use the git author name or email that matches your commits. Check them with:
+    </p>
+    <pre class="mt-4 overflow-x-auto rounded-xl border border-zinc-800 bg-zinc-950 p-5 font-mono text-sm text-zinc-400"><code>git config user.name
+git config user.email</code></pre>
+
+    <h2 class="mt-12 text-2xl font-semibold">4. Build the first dataset</h2>
+    <p class="mt-3 text-zinc-400">
+      Open Actions → shipnote nightly dataset → Run workflow, and set <code class="font-mono text-zinc-200">days</code> to <code class="font-mono text-zinc-200">30</code>. Scheduled runs use 30 days by default.
+    </p>
+
+    <h2 class="mt-12 text-2xl font-semibold">Schedule</h2>
+    <p class="mt-3 text-zinc-400">
+      The workflow runs at 18:30 UTC, which is 00:00 IST. To change the time, edit the cron expression in <code class="font-mono text-zinc-200">.github/workflows/nightly-dataset.yml</code>. GitHub can start scheduled runs several minutes late, and public repositories disable scheduled workflows after 60 days without activity.
+    </p>
+
+    <h2 class="mt-12 text-2xl font-semibold">Run it locally</h2>
+    <p class="mt-3 text-zinc-400">Requires <code class="font-mono text-zinc-200">git</code> and the GitHub CLI, signed in with <code class="font-mono text-zinc-200">gh auth login</code>.</p>
+    <pre class="mt-4 overflow-x-auto rounded-xl border border-zinc-800 bg-zinc-950 p-5 font-mono text-sm text-zinc-400"><code>LOGIN=your-github-login AUTHOR="Your Name" DAYS=7 scripts/export-commits.sh out</code></pre>
+    <p class="mt-3 text-sm text-zinc-500">LOGIN and AUTHOR are required. DAYS defaults to 30. Output goes to out/&lt;owner&gt;/&lt;repo&gt;.patch.</p>
+  </main>
+</Base>

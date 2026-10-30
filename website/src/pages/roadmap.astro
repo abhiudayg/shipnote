@@ -1,0 +1,38 @@
+---
+import Base from '../layouts/Base.astro';
+const milestones = [
+  { id: 'M0', title: 'Evaluation set', body: 'Build 10 to 20 past commit clusters with the post each should have produced. No prompt tuning happens before this exists.' },
+  { id: 'M1', title: 'Fetch and select', body: 'Download and archive the dataset, drop used and trivial commits, and rank the rest. Dry-run output only.' },
+  { id: 'M2', title: 'Story drafts for tweets', body: 'Draft tweets from one story, with SHA-checked claims, sources, and generated hook visuals taken from the diff.' },
+  { id: 'M3', title: 'Blog drafts and theme mode', body: 'Blog posts in story and theme modes, agent-brain retrieval, and quality checks for theme posts.' },
+  { id: 'M4', title: 'Review and approve', body: 'A fast daily review command, approve and mark-used steps, and two weeks of daily use before anything changes.' },
+];
+---
+
+<Base
+  title="Roadmap: shipnote"
+  description="What shipnote builds next: the evaluation set, the drafting CLI, blog drafts, and the daily review flow."
+>
+  <main class="mx-auto max-w-3xl px-5 pt-20 pb-24">
+    <h1 class="text-4xl font-semibold tracking-tight">Roadmap</h1>
+    <p class="mt-4 text-lg text-zinc-400">
+      The nightly dataset is live. The drafting CLI is next, built in these milestones.
+    </p>
+
+    <ol class="mt-14 space-y-4">
+      {milestones.map((m) => (
+        <li class="flex gap-5 rounded-xl border border-zinc-800 bg-zinc-950 p-6">
+          <span class="font-mono text-sm text-sky-400">{m.id}</span>
+          <div>
+            <h2 class="font-semibold">{m.title}</h2>
+            <p class="mt-2 text-sm leading-relaxed text-zinc-400">{m.body}</p>
+          </div>
+        </li>
+      ))}
+    </ol>
+
+    <p class="mt-12 text-sm text-zinc-500">
+      Out of scope for now: auto-posting, scheduling, analytics, and drafting from private repositories.
+    </p>
+  </main>
+</Base>
