@@ -61,7 +61,9 @@ skipped:
 
 ```
 shipnote fetch  [--date YYYY-MM-DD] [--run ID]
+shipnote import <dir> [--date YYYY-MM-DD]
 shipnote select [--date YYYY-MM-DD]
+shipnote draft  [--date YYYY-MM-DD] [--top N]
 ```
 
 - `fetch` downloads the newest successful `nightly-dataset` run, or the run given by `--run`, into `archive/<date>/`. If that date is already archived, it does nothing.

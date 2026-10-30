@@ -1,5 +1,6 @@
 import { existsSync, readFileSync, rmSync } from "node:fs";
 import { join } from "node:path";
+import { importPatches } from "./archive";
 import { buildPrompt, check, parseDraft } from "./draft";
 import { parsePatch, type Commit } from "./patch";
 import { writeDrafts } from "./output";
@@ -132,16 +133,26 @@ async function draftPosts(args: string[]): Promise<void> {
   console.log(`${date}: ${result.draft.tweets.length} tweet(s), blog ${result.draft.blog ? "yes" : "no"}; see ${dir}`);
 }
 
+async function importArchive(args: string[]): Promise<void> {
+  const source = args[0];
+  if (!source) throw new Error("usage: shipnote import <dir> [--date YYYY-MM-DD]");
+  const date = flag(args, "--date") ?? today();
+  const destination = join(ARCHIVE, date);
+  const copied = importPatches(source, destination);
+  console.log(`imported ${copied.length} patch file(s) into ${destination}`);
+}
+
 const [command, ...args] = process.argv.slice(2);
 
 const commands: Record<string, (args: string[]) => Promise<void>> = {
   fetch: fetchDataset,
+  import: importArchive,
   select: selectCommits,
   draft: draftPosts,
 };
 
 if (!command || !commands[command]) {
-  console.log("usage: shipnote <fetch|select|draft> [--date YYYY-MM-DD] [--run ID] [--top N]");
+  console.log("usage: shipnote <fetch|import|select|draft> [--date YYYY-MM-DD] [--run ID] [--top N]");
   process.exit(command ? 1 : 0);
 }
 
