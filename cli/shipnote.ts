@@ -2,18 +2,38 @@ import { existsSync, readFileSync, rmSync } from "node:fs";
 import { join } from "node:path";
 import { approve, draftIds, readApproved, writeApproved } from "./approval";
 import { importPatches } from "./archive";
+import { agentCommand, loadConfig, type Config, type Provider } from "./config";
 import { mergeLedger, readLedger, validateShas, writeLedger } from "./ledger";
 import { buildPrompt, check, parseDraft } from "./draft";
 import { parsePatch, type Commit } from "./patch";
 import { writeDrafts } from "./output";
-import { select } from "./select";
+import { select, type Rules } from "./select";
 
 const ARCHIVE = "archive";
 const DRAFTS = "drafts";
 const LEDGER = "ledger.json";
 
+const CONFIG = "shipnote.toml";
+
 const repo = process.env.SHIPNOTE_REPO ?? "abhiudayg/shipnote";
-const denylist = new Set((process.env.SHIPNOTE_DENYLIST ?? "").split(",").filter(Boolean));
+
+function currentRules(config: Config): Rules {
+  const envRepos = (process.env.SHIPNOTE_DENYLIST ?? "").split(",").filter(Boolean);
+  return {
+    used: loadLedger(),
+    denylistRepos: new Set([...config.denylistRepos, ...envRepos]),
+    denylistTerms: config.denylistTerms,
+  };
+}
+
+function resolvedProvider(config: Config): Provider {
+  const base = config.providers[config.provider];
+  return {
+    ...base,
+    model: process.env.SHIPNOTE_MODEL ?? base.model,
+    effort: process.env.SHIPNOTE_EFFORT ?? base.effort,
+  };
+}
 
 function today(): string {
   return new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Kolkata" }).format(new Date());
@@ -114,7 +134,7 @@ async function showStatus(args: string[]): Promise<void> {
 async function selectCommits(args: string[]): Promise<void> {
   const date = flag(args, "--date") ?? today();
   const commits = await loadCommits(join(ARCHIVE, date));
-  const result = select(commits, loadLedger(), denylist);
+  const result = select(commits, currentRules(loadConfig(CONFIG)));
 
   console.log(`${date}: ${commits.length} commits, ${result.selected.length} selected, ${result.skipped.length} skipped\n`);
   for (const [rank, commit] of result.selected.entries()) {
@@ -129,10 +149,13 @@ async function selectCommits(args: string[]): Promise<void> {
   }
 }
 
-async function callAgent(prompt: string): Promise<string> {
-  const model = process.env.SHIPNOTE_MODEL ?? "gemini-3.8-flash-medium";
-  const effort = process.env.SHIPNOTE_EFFORT ?? "medium";
-  const proc = Bun.spawn(["agy", "-p", prompt, "--model", model, "--effort", effort], { stdout: "pipe", stderr: "pipe" });
+async function callAgent(provider: Provider, prompt: string): Promise<string> {
+  const { argv, stdin } = agentCommand(provider, prompt);
+  const proc = Bun.spawn(argv, {
+    stdin: stdin === null ? "ignore" : new Blob([stdin]),
+    stdout: "pipe",
+    stderr: "pipe",
+  });
   const [stdout, stderr, code] = await Promise.all([
     new Response(proc.stdout).text(),
     new Response(proc.stderr).text(),
@@ -145,13 +168,13 @@ async function callAgent(prompt: string): Promise<string> {
 async function draftPosts(args: string[]): Promise<void> {
   const date = flag(args, "--date") ?? today();
   const top = Number(flag(args, "--top") ?? 5);
-  const model = process.env.SHIPNOTE_MODEL ?? "gemini-3.8-flash-medium";
-  const effort = process.env.SHIPNOTE_EFFORT ?? "medium";
+  const config = loadConfig(CONFIG);
+  const provider = resolvedProvider(config);
   const commits = await loadCommits(join(ARCHIVE, date));
-  const { selected, skipped } = select(commits, loadLedger(), denylist);
+  const { selected, skipped } = select(commits, currentRules(config));
   const chosen = selected.slice(0, top);
   const dir = join(DRAFTS, date);
-  const info = { date, model, effort, selected: chosen.length, skipped: skipped.length };
+  const info = { date, model: provider.model, effort: provider.effort, selected: chosen.length, skipped: skipped.length };
 
   if (chosen.length === 0) {
     writeDrafts(dir, null, [], { ...info, error: "No commits passed selection, so there is nothing to draft." });
@@ -161,7 +184,7 @@ async function draftPosts(args: string[]): Promise<void> {
 
   let raw: string;
   try {
-    raw = await callAgent(buildPrompt(chosen));
+    raw = await callAgent(provider, buildPrompt(chosen));
   } catch (error) {
     writeDrafts(dir, null, chosen, { ...info, error: `The agent call failed: ${(error as Error).message}` });
     console.log(`agent call failed; see ${join(dir, "review.md")}`);

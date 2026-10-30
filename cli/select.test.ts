@@ -1,12 +1,16 @@
 import { describe, expect, test } from "bun:test";
 import { readFileSync } from "node:fs";
 import { parsePatch } from "./patch";
-import { score, select } from "./select";
+import { type Rules, score, select } from "./select";
 
 const sample = parsePatch(readFileSync(new URL("./fixtures/sample.patch", import.meta.url), "utf8"), "abhiudayg/dustmap");
 const retrySha = "1111111111111111111111111111111111111111";
 const mergeSha = "2222222222222222222222222222222222222222";
 const lockSha = "3333333333333333333333333333333333333333";
+
+function rules(overrides: Partial<Rules> = {}): Rules {
+  return { used: new Set(), denylistRepos: new Set(), denylistTerms: [], ...overrides };
+}
 
 describe("parsePatch", () => {
   test("reads every commit with its metadata", () => {
@@ -34,7 +38,7 @@ describe("parsePatch", () => {
 
 describe("select", () => {
   test("keeps the substantive commit and skips merges and lockfile-only commits", () => {
-    const result = select(sample, new Set(), new Set());
+    const result = select(sample, rules());
     expect(result.selected.map((c) => c.sha)).toEqual([retrySha]);
     expect(result.skipped).toEqual([
       { sha: mergeSha, reason: "merge commit" },
@@ -43,25 +47,30 @@ describe("select", () => {
   });
 
   test("skips commits already in the used ledger", () => {
-    const result = select(sample, new Set([retrySha]), new Set());
+    const result = select(sample, rules({ used: new Set([retrySha]) }));
     expect(result.selected).toEqual([]);
     expect(result.skipped[0]).toEqual({ sha: retrySha, reason: "already used" });
   });
 
   test("skips every commit from a denylisted repo", () => {
-    const result = select(sample, new Set(), new Set(["abhiudayg/dustmap"]));
+    const result = select(sample, rules({ denylistRepos: new Set(["abhiudayg/dustmap"]) }));
     expect(result.selected).toEqual([]);
     expect(result.skipped.every((skip) => skip.reason === "denylisted repo")).toBe(true);
   });
 
+  test("skips a commit whose message contains a denylisted term, ignoring case", () => {
+    const result = select(sample, rules({ denylistTerms: ["RETRY"] }));
+    expect(result.skipped[0]).toEqual({ sha: retrySha, reason: "denylisted term" });
+  });
+
   test("ranks a larger change above a smaller one", () => {
-    const [small] = select(sample, new Set(), new Set()).selected;
+    const [small] = select(sample, rules()).selected;
     const large = { ...small, added: 3000, removed: 200, newFiles: 4 };
     expect(score(large)).toBeGreaterThan(score(small));
   });
 
   test("scores the selected commit between 0 and 1", () => {
-    const [only] = select(sample, new Set(), new Set()).selected;
+    const [only] = select(sample, rules()).selected;
     expect(only.score).toBeGreaterThan(0);
     expect(only.score).toBeLessThanOrEqual(1);
   });

@@ -6,14 +6,22 @@ const WEAK_SUBJECT = /^(wip|fix|update|misc|tmp|temp)\b/i;
 
 export type Skip = { sha: string; reason: string };
 
+export type Rules = {
+  used: Set<string>;
+  denylistRepos: Set<string>;
+  denylistTerms: string[];
+};
+
 export type Selection = {
   selected: Array<Commit & { score: number }>;
   skipped: Skip[];
 };
 
-export function skipReason(commit: Commit, used: Set<string>, denylist: Set<string>): string | null {
-  if (used.has(commit.sha)) return "already used";
-  if (denylist.has(commit.repo)) return "denylisted repo";
+export function skipReason(commit: Commit, rules: Rules): string | null {
+  if (rules.used.has(commit.sha)) return "already used";
+  if (rules.denylistRepos.has(commit.repo)) return "denylisted repo";
+  const text = `${commit.subject}\n${commit.body}`.toLowerCase();
+  if (rules.denylistTerms.some((term) => text.includes(term.toLowerCase()))) return "denylisted term";
   if (commit.subject.startsWith("Merge ")) return "merge commit";
   if (commit.files.length === 0) return "no file changes";
   if (commit.files.every((file) => LOCKFILES.has(basename(file)))) return "lockfile only";
@@ -27,12 +35,12 @@ export function score(commit: Commit): number {
   return Number((0.6 * size + 0.2 * newFiles + 0.2 * quality).toFixed(3));
 }
 
-export function select(commits: Commit[], used: Set<string>, denylist: Set<string>): Selection {
+export function select(commits: Commit[], rules: Rules): Selection {
   const selected: Selection["selected"] = [];
   const skipped: Skip[] = [];
 
   for (const commit of commits) {
-    const reason = skipReason(commit, used, denylist);
+    const reason = skipReason(commit, rules);
     if (reason) skipped.push({ sha: commit.sha, reason });
     else selected.push({ ...commit, score: score(commit) });
   }
