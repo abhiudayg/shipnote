@@ -11,7 +11,7 @@ export const MAX_TWEET_CHARS = 280;
 export const BLOG_WORDS = { min: 600, max: 1200 };
 
 const DIFF_CHARS = 2500;
-const SECRET = /ghp_[A-Za-z0-9]{20,}|AKIA[0-9A-Z]{16}|-----BEGIN [A-Z ]*PRIVATE KEY-----|sk_live_[A-Za-z0-9]{16,}/;
+export const SECRET = /ghp_[A-Za-z0-9]{20,}|AKIA[0-9A-Z]{16}|-----BEGIN [A-Z ]*PRIVATE KEY-----|sk_live_[A-Za-z0-9]{16,}/;
 
 export function buildPrompt(commits: Commit[]): string {
   const blocks = commits.map(

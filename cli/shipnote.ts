@@ -1,8 +1,9 @@
-import { existsSync, readFileSync, rmSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { approve, draftIds, readApproved, writeApproved } from "./approval";
 import { importPatches } from "./archive";
 import { checkBudget, estimateCostUsd, estimateTokens } from "./budget";
+import { altText, BLOG_SIZE, excerptCard, excerptMatchesDiff, firstExcerpt, TWEET_SIZE } from "./media";
 import { agentCommand, loadConfig, type Config, type Provider } from "./config";
 import { mergeLedger, readLedger, validateShas, writeLedger } from "./ledger";
 import { buildPrompt, check, MAX_TWEET_CHARS, parseDraft } from "./draft";
@@ -177,6 +178,39 @@ async function callWithRetries(provider: Provider, prompt: string, retries: numb
   }
 }
 
+async function hookMedia(args: string[]): Promise<void> {
+  const date = flag(args, "--date") ?? today();
+  const config = loadConfig(CONFIG);
+  const commits = await loadCommits(join(ARCHIVE, date));
+  const { selected } = select(commits, currentRules(config));
+  const dir = join(DRAFTS, date, "media");
+  rmSync(dir, { recursive: true, force: true });
+  mkdirSync(dir, { recursive: true });
+
+  const source = selected.slice(0, 10).find((commit) => firstExcerpt(commit) !== null);
+  const excerpt = source ? firstExcerpt(source) : null;
+  if (!source || !excerpt) {
+    writeFileSync(join(dir, "media.json"), `${JSON.stringify({ items: [], note: "No commit in the top ten has a clean diff excerpt." }, null, 2)}\n`);
+    console.log(`no hook media for ${date}; see ${join(dir, "media.json")}`);
+    return;
+  }
+  if (!excerptMatchesDiff(excerpt, source.diff)) {
+    throw new Error(`excerpt from ${source.sha.slice(0, 7)} does not match its diff`);
+  }
+
+  const sha = source.sha.slice(0, 7);
+  const alt = altText(excerpt, source);
+  const items = [
+    { file: `hook-tweet-${sha}.svg`, size: TWEET_SIZE },
+    { file: `hook-blog-${sha}.svg`, size: BLOG_SIZE },
+  ].map(({ file, size }) => {
+    writeFileSync(join(dir, file), excerptCard(excerpt, source, size));
+    return { file, alt, sha: source.sha, repo: source.repo, width: size.width, height: size.height };
+  });
+  writeFileSync(join(dir, "media.json"), `${JSON.stringify({ items, note: "Generated diff excerpt cards." }, null, 2)}\n`);
+  console.log(`wrote ${items.length} hook card(s) for ${sha} into ${dir}`);
+}
+
 async function reviewDrafts(args: string[]): Promise<void> {
   const date = flag(args, "--date") ?? today();
   const reviewPath = draftPath(date, "review.md");
@@ -283,10 +317,11 @@ const commands: Record<string, (args: string[]) => Promise<void>> = {
   "mark-used": markUsed,
   status: showStatus,
   review: reviewDrafts,
+  media: hookMedia,
 };
 
 if (!command || !commands[command]) {
-  console.log("usage: shipnote <fetch|import|select|draft|review|approve|mark-used|status> [--date YYYY-MM-DD] [--run ID] [--top N]");
+  console.log("usage: shipnote <fetch|import|select|draft|media|review|approve|mark-used|status> [--date YYYY-MM-DD] [--run ID] [--top N]");
   process.exit(command ? 1 : 0);
 }
 
