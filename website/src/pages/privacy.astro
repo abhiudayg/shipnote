@@ -5,7 +5,7 @@ const sections = [
   { title: 'What it reads', body: 'The nightly job reads only public repositories where your account made commits in the window. Private repositories are excluded by the GitHub query itself.' },
   { title: 'What it publishes', body: 'The dataset is uploaded as a workflow artifact, which GitHub deletes after 10 days. It contains full diffs, so anyone with read access to the repository can download it during that window. Keep secrets out of commits.' },
   { title: 'Secret scanning', body: 'Gitleaks scans the dataset before upload, and a finding fails the run. It catches common secret formats but is not a guarantee. A small allowlist covers known false positives, such as Go module checksums.' },
-  { title: 'What drafting will send', body: 'When drafting runs, the selected commit data and context go to the agent provider you configure. shipnote sends nothing to any other service. This site runs no analytics or tracking scripts.' },
+  { title: 'What drafting will send', body: 'When drafting runs, the selected commit data and context go to the agent provider you configure. shipnote sends nothing to any other service. The home page loads Vercel Web Analytics, which counts page views. The documentation pages load no analytics or tracking scripts.' },
   { title: 'Nothing posts for you', body: 'shipnote never publishes to X, a blog, or any other platform. You review and approve each draft, then post it yourself.' },
 ];
 ---

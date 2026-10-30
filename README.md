@@ -102,7 +102,7 @@ The job reads the account from the repository owner, so a fork needs no other ch
 - Only public repositories are exported. Private repos are not in the dataset.
 - The dataset contains full diffs. Anything committed to a public repo is in the artifact, and anyone with read access to the repo can download it for 10 days. Keep secrets out of commits.
 - Gitleaks catches common secret formats but is not a guarantee.
-- The website uses no analytics or tracking scripts.
+- The home page of the website loads Vercel Web Analytics, which counts page views. The other website pages load no analytics or tracking scripts.
 
 ## Configuration
 
