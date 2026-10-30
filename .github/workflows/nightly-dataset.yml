@@ -19,7 +19,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Export last 7 days of commits
+      - name: Export commits
         env:
           DAYS: ${{ inputs.days || '30' }}
           LOGIN: ${{ github.repository_owner }}
@@ -28,7 +28,7 @@ jobs:
         run: scripts/export-commits.sh dataset
 
       - name: Scan dataset for secrets
-        run: docker run --rm -v "$PWD/dataset:/scan" ghcr.io/gitleaks/gitleaks:v8.18.4 detect --no-git --source /scan --exit-code 1
+        run: docker run --rm -v "$PWD/dataset:/scan" -v "$PWD/.gitleaks.toml:/config.toml:ro" ghcr.io/gitleaks/gitleaks:v8.18.4 detect --no-git --source /scan --config /config.toml --exit-code 1
 
       - name: Upload dataset
         uses: actions/upload-artifact@v4

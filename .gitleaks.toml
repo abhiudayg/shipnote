@@ -1,0 +1,13 @@
+title = "social-pipeline dataset scan"
+
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Known false positives in exported commit diffs"
+regexes = [
+  '''^[A-Za-z0-9+/]{43}=$''',
+  '''r"-----BEGIN \(RSA \|EC \)\?PRIVATE KEY-----"''',
+  '''r"\(\?i\)\(api\[_-\]\?key\|secret\|password\|token\)''',
+  '''^secret12345678901234567890$''',
+]
