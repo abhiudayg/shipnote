@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="assets/logo.svg" width="128" alt="shipnote logo">
+</p>
+
 # shipnote
 
 shipnote turns the work you ship into posts. It starts with a nightly GitHub Action that builds a dataset of your recent public commits, with full diffs. A drafting CLI, planned next, will use that dataset to write tweets and blog posts that a human approves before anything is published.
