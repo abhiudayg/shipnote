@@ -136,6 +136,18 @@ cd website && bun run dev    # website at localhost:4321
 
 Run the full verification with `.verify/run.sh`. It covers shellcheck on the export script, workflow and TOML parsing, the logo, the website build, and the CLI tests.
 
+## Releasing
+
+Releases are automatic once a version tag is pushed. The changelog is the source of the release notes.
+
+1. Move the entries under `## [Unreleased]` in `CHANGELOG.md` into a new section, `## [X.Y.Z] - YYYY-MM-DD`.
+2. Set `"version"` in `package.json` to `X.Y.Z`.
+3. Commit both, then tag and push: `git tag -a vX.Y.Z -m "shipnote vX.Y.Z" && git push origin vX.Y.Z`.
+
+The `release` workflow then runs the CLI tests, checks that the tag matches `package.json`, takes the notes from the matching changelog section, and publishes the GitHub release. If the tag and the package version disagree, or the changelog has no section for the version, the release is not published.
+
+Verification (`.verify/run.sh`) also checks that the current package version has a changelog section.
+
 ## Roadmap
 
 - **Drafting:** tweets and blog drafts from the selected commits, using the agent you configure. Each claim must cite a commit SHA that exists in the dataset.

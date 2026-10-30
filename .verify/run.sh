@@ -9,6 +9,9 @@ mkdir -p .verify/artifacts
   xmllint --noout assets/logo.svg && echo "logo svg ok"
   (cd website && bun install --frozen-lockfile && bun run build)
   bun test cli
+  shellcheck scripts/release-notes.sh
+  scripts/release-notes.sh "$(jq -r .version package.json)" >/dev/null
+  ruby -ryaml -e 'YAML.load_file(".github/workflows/release.yml"); puts "release workflow yaml ok"'
   ruby -ryaml -e 'YAML.load_file(".github/workflows/nightly-dataset.yml"); puts "workflow yaml ok"'
   bun -e 'const c = await import("./shipnote.example.toml"); console.log("shipnote config ok:", c.default.agent.provider)'
 } 2>&1 | tee .verify/artifacts/run.log
