@@ -4,17 +4,18 @@ import '../styles/global.css';
 interface Props {
   title: string;
   description: string;
+  active?: string;
 }
 
-const { title, description } = Astro.props;
+const { title, description, active = '' } = Astro.props;
 const repo = 'https://github.com/abhiudayg/shipnote';
 const navItems = [
+  { label: 'Features', href: '/features/' },
   { label: 'How it works', href: '/how-it-works/' },
-  { label: 'Setup', href: '/setup/' },
-  { label: 'CLI', href: '/cli/' },
-  { label: 'Roadmap', href: '/roadmap/' },
-  { label: 'Privacy', href: '/privacy/' },
+  { label: 'Docs', href: '/docs/' },
+  { label: 'Changelog', href: '/changelog/' },
 ];
+const year = new Date().getFullYear();
 ---
 
 <!doctype html>
@@ -32,34 +33,64 @@ const navItems = [
       rel="stylesheet"
     />
   </head>
-  <body class="min-h-screen antialiased">
-    <header class="border-b border-white/[0.08]">
-      <div class="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-y-3 px-5 py-4">
-        <a href="/" class="flex items-center gap-2.5 text-sm font-semibold">
-          <img src="/logo.svg" alt="" width="28" height="28" />
-          shipnote
-        </a>
-        <nav class="flex flex-wrap items-center gap-x-5 gap-y-2 text-sm text-zinc-400">
+  <body class="flex min-h-screen flex-col bg-black font-sans text-white antialiased">
+    <header class="sticky top-0 z-50 border-b border-white/[0.08] bg-black/80 backdrop-blur-md">
+      <div class="mx-auto flex h-16 max-w-6xl items-center justify-between gap-4 px-5">
+        <div class="flex items-center gap-3">
+          <a href="/" class="flex items-center gap-2.5 text-[17px] font-semibold tracking-tight">
+            <img src="/logo.svg" alt="" width="28" height="28" class="rounded-md" />
+            shipnote
+          </a>
+          <span class="hidden rounded border border-white/[0.08] bg-zinc-900/60 px-2 py-0.5 font-mono text-xs text-zinc-400 sm:inline-flex">local-first</span>
+        </div>
+        <nav class="hidden items-center gap-6 text-sm md:flex">
           {navItems.map((item) => (
-            <a href={item.href} class="hover:text-white">{item.label}</a>
+            <a
+              href={item.href}
+              class:list={[
+                'transition-colors duration-150 hover:text-white',
+                active === item.href ? 'text-white font-medium' : 'text-zinc-400',
+              ]}
+            >
+              {item.label}
+            </a>
           ))}
-          <a href={repo} class="hidden rounded-lg border border-white/[0.08] px-3 py-1.5 text-zinc-300 hover:border-white/[0.18] hover:text-white sm:inline-flex">Star on GitHub</a>
-          <a href="/setup/" class="rounded-lg bg-sky-400 px-3.5 py-1.5 font-semibold text-black hover:bg-sky-300">Get started</a>
         </nav>
+        <div class="flex items-center gap-3">
+          <a
+            href={repo}
+            class="hidden items-center gap-2 rounded-lg border border-white/[0.08] bg-zinc-950 px-3 py-1.5 text-sm text-zinc-300 transition-colors hover:border-white/[0.18] hover:text-white sm:inline-flex"
+          >
+            Star on GitHub
+          </a>
+          <a
+            href="/setup/"
+            class="rounded-lg bg-sky-400 px-3.5 py-1.5 text-sm font-semibold text-black transition-colors hover:bg-sky-300"
+          >
+            Get started
+          </a>
+        </div>
       </div>
     </header>
 
-    <slot />
+    <div class="dot-grid flex-1">
+      <slot />
+    </div>
 
-    <footer class="border-t border-white/[0.08] py-8 text-sm text-zinc-400">
-      <div class="mx-auto flex max-w-5xl flex-wrap justify-between gap-4 px-5">
-        <span>shipnote</span>
+    <footer class="border-t border-white/[0.08] bg-black py-10 text-sm text-zinc-400">
+      <div class="mx-auto flex max-w-6xl flex-col gap-6 px-5 md:flex-row md:items-center md:justify-between">
+        <div class="flex items-center gap-3">
+          <img src="/logo.svg" alt="" width="22" height="22" class="rounded" />
+          <span class="font-medium text-white">shipnote</span>
+          <span class="text-zinc-600">•</span>
+          <span>© {year} shipnote</span>
+        </div>
         <nav class="flex flex-wrap gap-x-5 gap-y-2">
+          <a href="/docs/" class="hover:text-white">Documentation</a>
           <a href={repo} class="hover:text-white">GitHub</a>
-          <a href="/setup/" class="hover:text-white">Setup</a>
-          <a href="/cli/" class="hover:text-white">CLI</a>
-          <a href="/privacy/" class="hover:text-white">Privacy</a>
           <a href="/roadmap/" class="hover:text-white">Roadmap</a>
+          <a href="/changelog/" class="hover:text-white">Changelog</a>
+          <a href="/privacy/" class="hover:text-white">Privacy</a>
         </nav>
       </div>
     </footer>

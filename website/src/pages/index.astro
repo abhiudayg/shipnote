@@ -1,78 +1,174 @@
 ---
 import Base from '../layouts/Base.astro';
 const repo = 'https://github.com/abhiudayg/shipnote';
+
 const steps = [
-  { title: 'Nightly dataset', body: 'A GitHub Action collects your public commits and diffs from the last 30 days.' },
-  { title: 'Grounded drafts', body: 'Each draft cites the commit SHAs it is based on. Claims without a matching commit are dropped.' },
-  { title: 'You approve', body: 'You review each draft with its evidence and decide what gets posted.' },
+  {
+    label: 'STEP 01',
+    title: 'Nightly dataset of public commits',
+    status: 'Working',
+    body: 'A scheduled GitHub Actions workflow exports your public commits and full diffs from the last 30 days, scans them for secrets, and uploads them as an artifact that expires after 10 days.',
+    code: "on:\n  schedule:\n    - cron: '30 18 * * *'",
+  },
+  {
+    label: 'STEP 02',
+    title: 'Drafts grounded in commit SHAs',
+    status: 'Planned',
+    body: 'The drafting step will turn selected commits into tweets and blog drafts. Every claim must cite a commit SHA that exists in the dataset, and claims that fail the check are dropped.',
+    code: 'sha: 8decf94\nrepo: abhiudayg/else\nclaim: product draft and design source',
+  },
+  {
+    label: 'STEP 03',
+    title: 'You review and approve',
+    status: 'Planned',
+    body: 'Nothing goes out automatically. Each draft is shown beside its evidence so you can approve, edit, or reject it. shipnote does not post anywhere.',
+    code: 'bun cli/shipnote.ts select\n# review and approve: planned',
+  },
 ];
-const features = [
-  { title: 'Every claim traced', body: 'Each factual statement links to the commit and file it came from.' },
-  { title: 'Nothing publishes itself', body: 'shipnote drafts. You approve and post. There is no auto-posting.' },
-  { title: 'Fork and run it', body: 'The nightly job runs on your own GitHub account with two settings.' },
+
+const guarantees = [
+  {
+    title: 'Every claim traced to a commit',
+    body: 'Each factual statement will link to the commit and file it came from. The check runs before a draft is shown to you.',
+    badge: 'SHA validation · planned',
+  },
+  {
+    title: 'Nothing publishes without approval',
+    body: 'shipnote contains no posting code. Drafts are written to files, and you decide what happens next.',
+    badge: 'No auto-posting · by design',
+  },
+  {
+    title: 'Fork it and run it on your account',
+    body: 'The nightly job reads your account from the repository owner. A fork needs two settings and one manual run.',
+    badge: 'Your account · two settings',
+  },
 ];
 ---
 
 <Base
   title="shipnote: Turn what you ship into posts you approve"
   description="shipnote turns the work you ship into tweets and blog drafts. Every claim is tied to a commit, and nothing publishes without your approval."
+  active="/"
 >
   <main>
-    <section class="px-5 pt-20 pb-20 text-center" style="background: radial-gradient(circle at 50% -10%, rgba(56, 189, 248, 0.07) 0%, rgba(0, 0, 0, 0) 65%);">
-      <div class="mx-auto mb-6 inline-flex items-center gap-2 rounded-full border border-white/[0.08] bg-zinc-950 px-3.5 py-1 font-mono text-xs text-zinc-400">
-        <span class="h-1.5 w-1.5 rounded-full bg-sky-400"></span>
-        Human-in-the-loop <span class="text-zinc-600">•</span> <span class="text-zinc-200">nightly at 00:00 IST</span>
+    <section class="hero-glow border-b border-white/[0.08] px-5 pt-20 pb-16 md:pt-28">
+      <div class="mx-auto flex max-w-4xl flex-col items-center text-center">
+        <div class="mb-6 inline-flex items-center gap-2 rounded-full border border-white/[0.08] bg-zinc-950 px-3.5 py-1 font-mono text-xs text-zinc-400">
+          <span class="h-1.5 w-1.5 rounded-full bg-sky-400"></span>
+          Human-in-the-loop <span class="text-zinc-600">•</span> <span class="text-zinc-200">nightly at 00:00 IST</span>
+        </div>
+        <h1 class="text-[2rem] leading-[2.5rem] font-bold tracking-[-0.02em] md:text-[3.5rem] md:leading-[4rem] md:tracking-[-0.035em]">
+          Turn what you ship into posts you approve.
+        </h1>
+        <p class="mt-6 max-w-2xl text-base text-zinc-400 md:text-lg">
+          shipnote reads your public commits each night and prepares the material for tweets and blog posts. Every claim is tied to a commit, and nothing goes out until you approve it.
+        </p>
+        <div class="mt-9 flex flex-col items-center gap-3 sm:flex-row">
+          <a href={repo} class="rounded-lg bg-sky-400 px-6 py-2.5 text-sm font-semibold text-black shadow-[0_0_20px_rgba(56,189,248,0.22)] transition-colors hover:bg-sky-300">View on GitHub</a>
+          <a href="/setup/" class="rounded-lg border border-white/[0.08] bg-zinc-950 px-6 py-2.5 text-sm font-medium text-white transition-colors hover:border-white/[0.18]">Read the setup guide</a>
+        </div>
       </div>
-      <h1 class="mx-auto max-w-4xl text-[2rem] leading-[2.5rem] font-bold tracking-[-0.02em] md:text-[3.25rem] md:leading-[3.75rem] md:tracking-[-0.035em]">
-        Turn what you ship into posts you approve.
-      </h1>
-      <p class="mx-auto mt-6 max-w-xl text-lg text-zinc-400">
-        shipnote reads your public commits each night and drafts tweets and blog posts from them. Every claim is tied to a commit, and nothing goes out until you approve it.
-      </p>
-      <div class="mt-10 flex flex-wrap justify-center gap-3">
-        <a href={repo} class="rounded-lg bg-sky-400 px-6 py-2.5 text-sm font-semibold text-black shadow-[0_0_20px_rgba(56,189,248,0.22)] hover:bg-sky-300">View on GitHub</a>
-        <a href="/setup/" class="rounded-lg border border-white/[0.08] px-5 py-2.5 text-sm font-medium hover:border-zinc-600">Read the setup guide</a>
+
+      <div class="mx-auto mt-16 max-w-5xl overflow-hidden rounded-xl border border-white/[0.08] bg-zinc-950 shadow-2xl shadow-sky-500/5">
+        <div class="flex items-center justify-between border-b border-white/[0.08] px-4 py-3">
+          <div class="flex items-center gap-2">
+            <span class="h-2.5 w-2.5 rounded-full bg-zinc-700"></span>
+            <span class="h-2.5 w-2.5 rounded-full bg-zinc-700"></span>
+            <span class="h-2.5 w-2.5 rounded-full bg-zinc-700"></span>
+            <span class="ml-3 font-mono text-xs text-zinc-400">shipnote select --date 2026-10-30</span>
+          </div>
+          <span class="font-mono text-xs text-sky-400">human gate · pending review</span>
+        </div>
+        <div class="grid gap-px bg-white/[0.08] md:grid-cols-5">
+          <div class="bg-zinc-950 p-5 md:col-span-2">
+            <p class="mb-4 font-mono text-xs uppercase tracking-wider text-zinc-500">Ranked commits</p>
+            <ul class="space-y-3 text-sm">
+              <li class="rounded-lg border border-sky-400/40 bg-sky-400/[0.06] p-3">
+                <div class="flex items-center justify-between font-mono text-xs text-zinc-400"><span>8decf94 · abhiudayg/else</span><span>1.000</span></div>
+                <p class="mt-1.5 text-zinc-200">Add product draft and Stitch design source of truth.</p>
+              </li>
+              <li class="rounded-lg border border-white/[0.08] p-3">
+                <div class="flex items-center justify-between font-mono text-xs text-zinc-400"><span>bc533d5 · autonomic-ai-dev/agent-brain</span><span>1.000</span></div>
+                <p class="mt-1.5 text-zinc-300">refactor: debloat serve binary, honest metrics, Docker-style CLI help (#54)</p>
+              </li>
+              <li class="rounded-lg border border-white/[0.08] p-3">
+                <div class="flex items-center justify-between font-mono text-xs text-zinc-400"><span>9440c82 · autonomic-ai-dev/website</span><span>0.976</span></div>
+                <p class="mt-1.5 text-zinc-300">feat: centralize organ documentation, update blogs (#6)</p>
+              </li>
+            </ul>
+          </div>
+          <div class="bg-zinc-950 p-5 md:col-span-3">
+            <p class="mb-4 font-mono text-xs uppercase tracking-wider text-zinc-500">Selection summary</p>
+            <pre class="overflow-x-auto font-mono text-xs leading-6 text-zinc-300"><code>2026-10-30: 450 commits, 447 selected, 3 skipped
+
+skipped:
+  2 merge commit
+  1 no file changes</code></pre>
+            <div class="mt-6 flex items-center gap-2 rounded-lg border border-white/[0.08] bg-black p-3 text-xs text-zinc-400">
+              <span class="h-1.5 w-1.5 rounded-full bg-sky-400"></span>
+              Drafting and approval are the next milestones. Nothing is posted from here.
+            </div>
+          </div>
+        </div>
       </div>
     </section>
 
-    <section class="border-t border-white/[0.08] py-20">
-      <div class="mx-auto max-w-5xl px-5">
-        <h2 class="text-3xl font-semibold tracking-tight">How it works</h2>
-        <ol class="mt-10 grid gap-4 md:grid-cols-3">
-          {steps.map((step, i) => (
-            <li class="rounded-xl border border-white/[0.08] bg-zinc-950 p-6">
-              <span class="flex h-7 w-7 items-center justify-center rounded-full border border-white/[0.08] text-xs text-sky-400">{i + 1}</span>
-              <h3 class="mt-4 font-semibold">{step.title}</h3>
-              <p class="mt-2 text-sm text-zinc-400">{step.body}</p>
-            </li>
+    <section class="px-5 py-24">
+      <div class="mx-auto max-w-6xl">
+        <p class="font-mono text-xs uppercase tracking-wider text-sky-400">Pipeline</p>
+        <h2 class="mt-3 text-3xl font-semibold tracking-tight md:text-4xl">How it works</h2>
+        <p class="mt-3 max-w-xl text-zinc-400">From a git push to a post you approve, in three steps. The status on each step shows what is built today.</p>
+        <div class="mt-12 grid gap-5 md:grid-cols-3">
+          {steps.map((step) => (
+            <article class="flex flex-col rounded-xl border border-white/[0.08] bg-zinc-950 p-6 transition-colors hover:border-white/[0.16]">
+              <div class="flex items-center justify-between">
+                <span class="rounded border border-white/[0.08] px-2 py-0.5 font-mono text-[11px] text-zinc-400">{step.label}</span>
+                <span class:list={['font-mono text-[11px]', step.status === 'Working' ? 'text-sky-400' : 'text-zinc-500']}>{step.status}</span>
+              </div>
+              <h3 class="mt-5 text-lg font-semibold">{step.title}</h3>
+              <p class="mt-3 text-sm leading-relaxed text-zinc-400">{step.body}</p>
+              <pre class="mt-6 overflow-x-auto rounded-lg border border-white/[0.08] bg-black p-3 font-mono text-[11px] leading-5 text-zinc-400"><code>{step.code}</code></pre>
+            </article>
           ))}
-        </ol>
-        <a href="/how-it-works/" class="mt-8 inline-block text-sm text-sky-400 hover:text-sky-300">See the full pipeline →</a>
+        </div>
       </div>
     </section>
 
-    <section class="border-t border-white/[0.08] py-20">
-      <div class="mx-auto max-w-5xl px-5">
-        <h2 class="text-3xl font-semibold tracking-tight">Built to stay honest</h2>
-        <div class="mt-10 grid gap-4 md:grid-cols-3">
-          {features.map((f) => (
-            <div class="rounded-xl border border-white/[0.08] bg-zinc-950 p-6">
-              <h3 class="font-semibold">{f.title}</h3>
-              <p class="mt-2 text-sm text-zinc-400">{f.body}</p>
+    <section class="border-t border-white/[0.08] px-5 py-24">
+      <div class="mx-auto max-w-6xl">
+        <p class="font-mono text-xs uppercase tracking-wider text-sky-400">Principles</p>
+        <h2 class="mt-3 text-3xl font-semibold tracking-tight md:text-4xl">Built for technical integrity</h2>
+        <p class="mt-3 max-w-xl text-zinc-400">Written for developers who care about accuracy, your data, and getting credit correctly.</p>
+        <div class="mt-12 grid gap-5 md:grid-cols-3">
+          {guarantees.map((item) => (
+            <div class="flex flex-col rounded-xl border border-white/[0.08] bg-zinc-950 p-6">
+              <div class="flex h-9 w-9 items-center justify-center rounded-lg border border-white/[0.08] bg-black text-sky-400">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M5 12h14M12 5l7 7-7 7" /></svg>
+              </div>
+              <h3 class="mt-5 font-semibold">{item.title}</h3>
+              <p class="mt-3 text-sm leading-relaxed text-zinc-400">{item.body}</p>
+              <span class="mt-6 inline-flex w-fit rounded border border-white/[0.08] bg-black px-2.5 py-1 font-mono text-[11px] text-zinc-400">{item.badge}</span>
             </div>
           ))}
         </div>
       </div>
     </section>
 
-    <section class="border-t border-white/[0.08] py-20">
-      <div class="mx-auto max-w-5xl px-5">
-        <h2 class="text-3xl font-semibold tracking-tight">Get started in four steps</h2>
-        <pre class="mt-8 overflow-x-auto rounded-xl border border-white/[0.08] bg-zinc-950 p-5 font-mono text-sm text-zinc-400"><code>1. Fork github.com/abhiudayg/shipnote
-2. Enable Actions in your fork
-3. Set the repository variable DATASET_AUTHOR to your git name
-4. Run the nightly-dataset workflow once with days = 30</code></pre>
-        <a href="/setup/" class="mt-6 inline-block text-sm text-sky-400 hover:text-sky-300">Full setup guide →</a>
+    <section class="border-t border-white/[0.08] px-5 py-24">
+      <div class="mx-auto max-w-3xl text-center">
+        <p class="font-mono text-xs uppercase tracking-wider text-sky-400">Get started</p>
+        <h2 class="mt-3 text-3xl font-semibold tracking-tight md:text-4xl">Run it on your own account</h2>
+        <p class="mx-auto mt-3 max-w-xl text-zinc-400">Fork the repository, then fetch and select from your own nightly dataset.</p>
+        <div class="mt-10 overflow-hidden rounded-xl border border-white/[0.08] bg-zinc-950 text-left">
+          <div class="flex items-center justify-between border-b border-white/[0.08] px-4 py-2.5">
+            <span class="font-mono text-xs text-zinc-500">bash · local terminal</span>
+          </div>
+          <pre class="overflow-x-auto p-5 font-mono text-sm leading-7 text-zinc-300"><code>$ gh repo fork abhiudayg/shipnote --clone
+$ cd shipnote && bun install
+$ SHIPNOTE_REPO=you/shipnote bun cli/shipnote.ts fetch
+$ bun cli/shipnote.ts select</code></pre>
+        </div>
+        <a href="/docs/" class="mt-8 inline-block text-sm text-sky-400 transition-colors hover:text-sky-300">Read the full documentation →</a>
       </div>
     </section>
   </main>

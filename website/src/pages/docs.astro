@@ -1,0 +1,60 @@
+---
+import Base from '../layouts/Base.astro';
+
+const sections = [
+  {
+    title: 'Setup',
+    href: '/setup/',
+    body: 'Fork the repository, enable Actions, set DATASET_AUTHOR, and run the first 30-day build.',
+  },
+  {
+    title: 'CLI reference',
+    href: '/cli/',
+    body: 'The fetch and select commands, their flags, and the environment variables they read.',
+  },
+  {
+    title: 'How it works',
+    href: '/how-it-works/',
+    body: 'The stages of the pipeline, from the nightly export through selection, drafting, and review.',
+  },
+  {
+    title: 'Privacy',
+    href: '/privacy/',
+    body: 'What is read, what is published as an artifact, and how the secret scan protects it.',
+  },
+  {
+    title: 'Roadmap',
+    href: '/roadmap/',
+    body: 'Milestones for the drafting, review, and approval steps, with what is done so far.',
+  },
+  {
+    title: 'Changelog',
+    href: '/changelog/',
+    body: 'What changed in each release of the repository and the website.',
+  },
+];
+---
+
+<Base
+  title="Documentation: shipnote"
+  description="Setup, CLI reference, pipeline details, privacy, and roadmap for shipnote."
+  active="/docs/"
+>
+  <main class="px-5 pt-20 pb-24">
+    <div class="mx-auto max-w-6xl">
+      <p class="font-mono text-xs uppercase tracking-wider text-sky-400">Documentation</p>
+      <h1 class="mt-3 text-4xl font-semibold tracking-tight md:text-5xl">Guides and reference</h1>
+      <p class="mt-4 max-w-2xl text-lg text-zinc-400">Everything you need to run shipnote on your own account and on your own machine.</p>
+
+      <div class="mt-14 grid gap-5 md:grid-cols-2 lg:grid-cols-3">
+        {sections.map((s) => (
+          <a href={s.href} class="group rounded-xl border border-white/[0.08] bg-zinc-950 p-6 transition-colors hover:border-white/[0.16]">
+            <h2 class="font-semibold group-hover:text-sky-400">{s.title}</h2>
+            <p class="mt-3 text-sm leading-relaxed text-zinc-400">{s.body}</p>
+            <span class="mt-5 inline-block font-mono text-xs text-zinc-500 group-hover:text-sky-400">Open →</span>
+          </a>
+        ))}
+      </div>
+    </div>
+  </main>
+</Base>

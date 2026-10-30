@@ -1,0 +1,72 @@
+---
+import Base from '../layouts/Base.astro';
+
+const features = [
+  {
+    title: 'Nightly dataset from GitHub',
+    status: 'Working',
+    body: 'A scheduled workflow finds every public repository where your account committed in the last 30 days, using GitHub contribution data. Private repositories are never queried.',
+  },
+  {
+    title: 'Full diffs, archived locally',
+    status: 'Working',
+    body: 'Commits are exported with their full patches. The fetch command downloads the artifact into a dated archive folder on your machine, so later steps never need network access.',
+  },
+  {
+    title: 'Secret scanning before upload',
+    status: 'Working',
+    body: 'Gitleaks, pinned to a version, scans the dataset before it is uploaded. A finding fails the run. A small allowlist covers known false positives such as Go module checksums.',
+  },
+  {
+    title: 'Ranked commit selection',
+    status: 'Working',
+    body: 'select skips merges, lockfile-only changes, commits already in your ledger, and denylisted repos. It ranks the rest by change size, new files, and message quality.',
+  },
+  {
+    title: 'Drafts grounded in commit SHAs',
+    status: 'Planned',
+    body: 'Drafts will cite the commits they are based on. A claim with no matching commit in the dataset is removed before you see the draft.',
+  },
+  {
+    title: 'Review and approval',
+    status: 'Planned',
+    body: 'A review step will show each draft beside its evidence. You approve, edit, or reject it. Nothing is posted by shipnote.',
+  },
+  {
+    title: 'Voice and context from agent-brain',
+    status: 'Planned',
+    body: 'Past posts and project notes will be stored in agent-brain and used as context while drafting, so drafts match your voice and avoid repeats.',
+  },
+  {
+    title: 'Works on your fork',
+    status: 'Working',
+    body: 'The workflow reads the account from the repository owner. A fork needs two settings and one manual run, with no code changes.',
+  },
+];
+---
+
+<Base
+  title="Features: shipnote"
+  description="What shipnote does today, what is planned, and how each part is verified."
+  active="/features/"
+>
+  <main class="px-5 pt-20 pb-24">
+    <div class="mx-auto max-w-6xl">
+      <p class="font-mono text-xs uppercase tracking-wider text-sky-400">Features</p>
+      <h1 class="mt-3 text-4xl font-semibold tracking-tight md:text-5xl">What it does, and what is next</h1>
+      <p class="mt-4 max-w-2xl text-lg text-zinc-400">Each feature shows its status. Nothing marked planned is in the code yet.</p>
+
+      <div class="mt-14 grid gap-5 md:grid-cols-2">
+        {features.map((f) => (
+          <article class="rounded-xl border border-white/[0.08] bg-zinc-950 p-6 transition-colors hover:border-white/[0.16]">
+            <div class="flex items-center justify-between gap-4">
+              <h2 class="font-semibold">{f.title}</h2>
+              <span class:list={['shrink-0 font-mono text-[11px]', f.status === 'Working' ? 'text-sky-400' : 'text-zinc-500']}>{f.status}</span>
+            </div>
+            <p class="mt-3 text-sm leading-relaxed text-zinc-400">{f.body}</p>
+          </article>
+        ))}
+      </div>
+    </div>
+  </main>
+</Base>
