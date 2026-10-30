@@ -1,9 +1,12 @@
 import { existsSync, readFileSync, rmSync } from "node:fs";
 import { join } from "node:path";
+import { buildPrompt, check, parseDraft } from "./draft";
 import { parsePatch, type Commit } from "./patch";
+import { writeDrafts } from "./output";
 import { select } from "./select";
 
 const ARCHIVE = "archive";
+const DRAFTS = "drafts";
 const LEDGER = "ledger.json";
 
 const repo = process.env.SHIPNOTE_REPO ?? "abhiudayg/shipnote";
@@ -76,15 +79,69 @@ async function selectCommits(args: string[]): Promise<void> {
   }
 }
 
+async function callAgent(prompt: string): Promise<string> {
+  const model = process.env.SHIPNOTE_MODEL ?? "gemini-3.8-flash-medium";
+  const effort = process.env.SHIPNOTE_EFFORT ?? "medium";
+  const proc = Bun.spawn(["agy", "-p", prompt, "--model", model, "--effort", effort], { stdout: "pipe", stderr: "pipe" });
+  const [stdout, stderr, code] = await Promise.all([
+    new Response(proc.stdout).text(),
+    new Response(proc.stderr).text(),
+    proc.exited,
+  ]);
+  if (code !== 0) throw new Error(`agent exited ${code}: ${stderr.trim()}`);
+  return stdout;
+}
+
+async function draftPosts(args: string[]): Promise<void> {
+  const date = flag(args, "--date") ?? today();
+  const top = Number(flag(args, "--top") ?? 5);
+  const model = process.env.SHIPNOTE_MODEL ?? "gemini-3.8-flash-medium";
+  const effort = process.env.SHIPNOTE_EFFORT ?? "medium";
+  const commits = await loadCommits(join(ARCHIVE, date));
+  const { selected, skipped } = select(commits, loadLedger(), denylist);
+  const chosen = selected.slice(0, top);
+  const dir = join(DRAFTS, date);
+  const info = { date, model, effort, selected: chosen.length, skipped: skipped.length };
+
+  if (chosen.length === 0) {
+    writeDrafts(dir, null, [], { ...info, error: "No commits passed selection, so there is nothing to draft." });
+    console.log(`no commits to draft for ${date}; see ${join(dir, "review.md")}`);
+    return;
+  }
+
+  let raw: string;
+  try {
+    raw = await callAgent(buildPrompt(chosen));
+  } catch (error) {
+    writeDrafts(dir, null, chosen, { ...info, error: `The agent call failed: ${(error as Error).message}` });
+    console.log(`agent call failed; see ${join(dir, "review.md")}`);
+    return;
+  }
+
+  let draft;
+  try {
+    draft = parseDraft(raw);
+  } catch (error) {
+    writeDrafts(dir, null, chosen, { ...info, error: `The model output could not be parsed: ${(error as Error).message}` });
+    console.log(`model output unreadable; see ${join(dir, "review.md")}`);
+    return;
+  }
+
+  const result = check(draft, chosen);
+  writeDrafts(dir, result, chosen, info);
+  console.log(`${date}: ${result.draft.tweets.length} tweet(s), blog ${result.draft.blog ? "yes" : "no"}; see ${dir}`);
+}
+
 const [command, ...args] = process.argv.slice(2);
 
 const commands: Record<string, (args: string[]) => Promise<void>> = {
   fetch: fetchDataset,
   select: selectCommits,
+  draft: draftPosts,
 };
 
 if (!command || !commands[command]) {
-  console.log("usage: shipnote <fetch|select> [--date YYYY-MM-DD] [--run ID]");
+  console.log("usage: shipnote <fetch|select|draft> [--date YYYY-MM-DD] [--run ID] [--top N]");
   process.exit(command ? 1 : 0);
 }
 

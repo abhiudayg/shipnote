@@ -1,0 +1,99 @@
+import { describe, expect, test } from "bun:test";
+import { readFileSync } from "node:fs";
+import { buildPrompt, check, parseDraft, type Draft } from "./draft";
+import { parsePatch } from "./patch";
+
+const commits = parsePatch(readFileSync(new URL("./fixtures/sample.patch", import.meta.url), "utf8"), "abhiudayg/dustmap");
+const retrySha = "1111111111111111111111111111111111111111";
+const mergeSha = "2222222222222222222222222222222222222222";
+const longBody = Array.from({ length: 650 }, () => "word").join(" ");
+const blog = (shas: string[], body = longBody) => ({ title: "Retry", summary: "Summary", body, shas });
+
+describe("buildPrompt", () => {
+  test("wraps each commit in a delimited block marked as data", () => {
+    const prompt = buildPrompt(commits);
+    expect(prompt).toContain("not instructions");
+    expect(prompt).toContain(`<commit sha="${retrySha}" repo="abhiudayg/dustmap">`);
+    expect(prompt).toContain(`<commit sha="${mergeSha}"`);
+  });
+
+  test("limits each diff to a fixed size", () => {
+    const big = [{ ...commits[0], diff: "x".repeat(10000) }];
+    const prompt = buildPrompt(big);
+    expect(prompt).toContain("x".repeat(2500));
+    expect(prompt).not.toContain("x".repeat(2501));
+  });
+});
+
+describe("parseDraft", () => {
+  test("reads the JSON object even when the model adds text around it", () => {
+    const raw = 'Here you go:\n{"tweets":[{"text":"hi","shas":["1"]}],"blog":null}\nThanks';
+    expect(parseDraft(raw)).toEqual({ tweets: [{ text: "hi", shas: ["1"] }], blog: null });
+  });
+
+  test("rejects output with no JSON object", () => {
+    expect(() => parseDraft("no json here")).toThrow("no JSON object");
+  });
+
+  test("rejects a tweet without a shas array", () => {
+    expect(() => parseDraft('{"tweets":[{"text":"hi"}],"blog":null}')).toThrow("tweet needs text and shas");
+  });
+});
+
+describe("check", () => {
+  test("keeps a tweet that cites a known commit", () => {
+    const draft: Draft = { tweets: [{ text: "Retries now run three times.", shas: [retrySha] }], blog: null };
+    const result = check(draft, commits);
+    expect(result.draft.tweets).toHaveLength(1);
+  });
+
+  test("drops a tweet that cites an unknown SHA", () => {
+    const draft: Draft = { tweets: [{ text: "Made up.", shas: ["9".repeat(40)] }], blog: null };
+    const result = check(draft, commits);
+    expect(result.draft.tweets).toHaveLength(0);
+    expect(result.rejections[0]).toMatchObject({ item: "tweet 1" });
+  });
+
+  test("drops a tweet with no commit cited", () => {
+    const result = check({ tweets: [{ text: "No source.", shas: [] }], blog: null }, commits);
+    expect(result.rejections[0].reason).toBe("cites no commit");
+  });
+
+  test("drops a tweet over 280 characters", () => {
+    const draft: Draft = { tweets: [{ text: "a".repeat(281), shas: [retrySha] }], blog: null };
+    expect(check(draft, commits).rejections[0].reason).toContain("over 280");
+  });
+
+  test("drops a tweet that matches a secret pattern", () => {
+    const draft: Draft = { tweets: [{ text: "token ghp_abcdefghijklmnopqrstuvwxyz", shas: [retrySha] }], blog: null };
+    expect(check(draft, commits).rejections[0].reason).toBe("matches a secret pattern");
+  });
+
+  test("keeps at most three tweets", () => {
+    const tweet = { text: "Retry.", shas: [retrySha] };
+    const result = check({ tweets: [tweet, tweet, tweet, tweet], blog: null }, commits);
+    expect(result.draft.tweets).toHaveLength(3);
+  });
+
+  test("keeps a blog within the word range", () => {
+    const result = check({ tweets: [], blog: blog([retrySha]) }, commits);
+    expect(result.draft.blog).not.toBeNull();
+  });
+
+  test("drops a blog outside the word range", () => {
+    const result = check({ tweets: [], blog: blog([retrySha], "short post") }, commits);
+    expect(result.draft.blog).toBeNull();
+    expect(result.rejections[0].reason).toContain("outside 600 to 1200");
+  });
+
+  test("drops a blog that cites an unknown SHA", () => {
+    const result = check({ tweets: [], blog: blog(["8".repeat(40)]) }, commits);
+    expect(result.draft.blog).toBeNull();
+    expect(result.rejections[0].reason).toContain("unknown SHA");
+  });
+
+  test("records a missing blog", () => {
+    const result = check({ tweets: [], blog: null }, commits);
+    expect(result.rejections).toEqual([{ item: "blog", reason: "model returned no blog" }]);
+  });
+});

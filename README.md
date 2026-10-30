@@ -9,9 +9,9 @@
 </p>
 
 <p align="center">
-  <a href="https://shipnote-website.vercel.app">Website</a> ·
-  <a href="https://shipnote-website.vercel.app/setup/">Setup</a> ·
-  <a href="https://shipnote-website.vercel.app/roadmap/">Roadmap</a>
+  <a href="https://shipnote.abhiudayg.dev">Website</a> ·
+  <a href="https://shipnote.abhiudayg.dev/setup/">Setup</a> ·
+  <a href="https://shipnote.abhiudayg.dev/roadmap/">Roadmap</a>
 </p>
 
 ---
@@ -30,7 +30,7 @@ It runs in two parts:
 | Nightly dataset Action | Working. Builds a 30-day dataset, scans it for secrets, and uploads it as an artifact that expires after 10 days. |
 | `shipnote fetch` | Working. Downloads and archives the latest successful dataset. |
 | `shipnote select` | Working. Parses commits, skips merges, lockfile-only changes, used commits, and denylisted repos, and ranks the rest. |
-| Drafting, media, review, approval | Not built yet. See the [roadmap](https://shipnote-website.vercel.app/roadmap/). |
+| Drafting, media, review, approval | Not built yet. See the [roadmap](https://shipnote.abhiudayg.dev/roadmap/). |
 | Website | Live on Vercel. Custom domain not connected yet. |
 
 ## Quick start
@@ -140,7 +140,7 @@ Run the full verification with `.verify/run.sh`. It covers shellcheck on the exp
 - **Review and approval:** a review command that shows each draft beside its evidence, plus approve, edit, and mark-used steps.
 - **Evaluation set:** past commit clusters with the post each should have produced, used to judge every prompt or model change.
 
-The website's [roadmap page](https://shipnote-website.vercel.app/roadmap/) has the milestones.
+The website's [roadmap page](https://shipnote.abhiudayg.dev/roadmap/) has the milestones.
 
 ## License
 
