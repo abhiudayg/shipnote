@@ -1,0 +1,43 @@
+---
+import Base from './Base.astro';
+
+interface Props {
+  title: string;
+  description: string;
+  active: string;
+}
+
+const { title, description, active } = Astro.props;
+const sections = [
+  { label: 'Documentation', href: '/docs/' },
+  { label: 'Setup', href: '/setup/' },
+  { label: 'CLI reference', href: '/cli/' },
+  { label: 'How it works', href: '/how-it-works/' },
+  { label: 'Privacy', href: '/privacy/' },
+  { label: 'Roadmap', href: '/roadmap/' },
+  { label: 'Changelog', href: '/changelog/' },
+];
+---
+
+<Base title={title} description={description} active={active}>
+  <div class="mx-auto grid max-w-6xl gap-10 px-5 pt-12 pb-24 grid-cols-1 md:grid-cols-[220px_minmax(0,1fr)]">
+    <aside class="md:sticky md:top-24 md:self-start">
+      <nav class="flex gap-1 overflow-x-auto md:flex-col">
+        {sections.map((s) => (
+          <a
+            href={s.href}
+            class:list={[
+              'whitespace-nowrap rounded-lg px-3 py-2 text-sm transition-colors',
+              active === s.href ? 'bg-white/[0.06] text-white' : 'text-zinc-400 hover:bg-white/[0.03] hover:text-white',
+            ]}
+          >
+            {s.label}
+          </a>
+        ))}
+      </nav>
+    </aside>
+    <article class="min-w-0 max-w-3xl">
+      <slot />
+    </article>
+  </div>
+</Base>

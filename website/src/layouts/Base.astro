@@ -29,43 +29,47 @@ const year = new Date().getFullYear();
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap"
       rel="stylesheet"
     />
   </head>
-  <body class="flex min-h-screen flex-col bg-black font-sans text-white antialiased">
-    <header class="sticky top-0 z-50 border-b border-white/[0.08] bg-black/80 backdrop-blur-md">
+  <body class="relative flex min-h-screen flex-col overflow-x-hidden bg-black font-sans text-white antialiased">
+    <div class="ambient" aria-hidden="true"></div>
+    <div class="fluid-grid" aria-hidden="true"></div>
+    <div class="fluid-grid fluid-grid-fine" aria-hidden="true"></div>
+
+    <header class="sticky top-0 z-50 border-b border-white/[0.08] bg-black/70 backdrop-blur-xl">
       <div class="mx-auto flex h-16 max-w-6xl items-center justify-between gap-4 px-5">
         <div class="flex items-center gap-3">
-          <a href="/" class="flex items-center gap-2.5 text-[17px] font-semibold tracking-tight">
-            <img src="/logo.svg" alt="" width="28" height="28" class="rounded-md" />
+          <a href="/" class="group flex items-center gap-2.5 text-[17px] font-semibold tracking-tight">
+            <img src="/logo.svg" alt="shipnote logo" width="26" height="26" class="rounded-md border border-white/[0.08] transition-colors group-hover:border-sky-400/60" />
             shipnote
           </a>
-          <span class="hidden rounded border border-white/[0.08] bg-zinc-900/60 px-2 py-0.5 font-mono text-xs text-zinc-400 sm:inline-flex">local-first</span>
+          <span class="hidden rounded border border-white/[0.08] bg-white/[0.03] px-2 py-0.5 font-mono text-[11px] text-zinc-400 sm:inline-flex">local-first</span>
         </div>
-        <nav class="hidden items-center gap-6 text-sm md:flex">
+        <nav class="hidden items-center gap-7 text-sm md:flex">
           {navItems.map((item) => (
             <a
               href={item.href}
               class:list={[
                 'transition-colors duration-150 hover:text-white',
-                active === item.href ? 'text-white font-medium' : 'text-zinc-400',
+                active === item.href ? 'font-medium text-white' : 'text-zinc-400',
               ]}
             >
               {item.label}
             </a>
           ))}
         </nav>
-        <div class="flex items-center gap-3">
+        <div class="flex items-center gap-2.5">
           <a
             href={repo}
-            class="hidden items-center gap-2 rounded-lg border border-white/[0.08] bg-zinc-950 px-3 py-1.5 text-sm text-zinc-300 transition-colors hover:border-white/[0.18] hover:text-white sm:inline-flex"
+            class="hidden items-center gap-2 rounded-lg border border-white/[0.1] bg-white/[0.03] px-3 py-1.5 text-sm text-zinc-300 transition-colors hover:border-white/[0.2] hover:text-white sm:inline-flex"
           >
             Star on GitHub
           </a>
           <a
             href="/setup/"
-            class="rounded-lg bg-sky-400 px-3.5 py-1.5 text-sm font-semibold text-black transition-colors hover:bg-sky-300"
+            class="rounded-lg bg-sky-400 px-3.5 py-1.5 text-sm font-medium text-black shadow-[0_0_16px_rgba(56,189,248,0.3)] transition-colors hover:bg-white"
           >
             Get started
           </a>
@@ -73,25 +77,47 @@ const year = new Date().getFullYear();
       </div>
     </header>
 
-    <div class="dot-grid flex-1">
+    <div class="relative z-10 flex-1">
       <slot />
     </div>
 
-    <footer class="border-t border-white/[0.08] bg-black py-10 text-sm text-zinc-400">
-      <div class="mx-auto flex max-w-6xl flex-col gap-6 px-5 md:flex-row md:items-center md:justify-between">
-        <div class="flex items-center gap-3">
-          <img src="/logo.svg" alt="" width="22" height="22" class="rounded" />
-          <span class="font-medium text-white">shipnote</span>
-          <span class="text-zinc-600">•</span>
-          <span>© {year} shipnote</span>
+    <footer class="relative z-10 border-t border-white/[0.08] bg-black/60 pt-14 pb-10 text-sm text-zinc-400 backdrop-blur-sm">
+      <div class="mx-auto grid max-w-6xl gap-10 px-5 md:grid-cols-[1.4fr_1fr_1fr_1fr]">
+        <div>
+          <div class="flex items-center gap-2.5">
+            <img src="/logo.svg" alt="" width="22" height="22" class="rounded" />
+            <span class="font-medium text-white">shipnote</span>
+          </div>
+          <p class="mt-4 max-w-xs text-zinc-500">Turn the work you ship into posts you approve. Local-first, human-in-the-loop.</p>
         </div>
-        <nav class="flex flex-wrap gap-x-5 gap-y-2">
-          <a href="/docs/" class="hover:text-white">Documentation</a>
-          <a href={repo} class="hover:text-white">GitHub</a>
-          <a href="/roadmap/" class="hover:text-white">Roadmap</a>
-          <a href="/changelog/" class="hover:text-white">Changelog</a>
-          <a href="/privacy/" class="hover:text-white">Privacy</a>
-        </nav>
+        <div>
+          <p class="font-mono text-[11px] uppercase tracking-wider text-zinc-500">Product</p>
+          <ul class="mt-4 space-y-2.5">
+            <li><a href="/features/" class="hover:text-white">Features</a></li>
+            <li><a href="/how-it-works/" class="hover:text-white">How it works</a></li>
+            <li><a href="/changelog/" class="hover:text-white">Changelog</a></li>
+          </ul>
+        </div>
+        <div>
+          <p class="font-mono text-[11px] uppercase tracking-wider text-zinc-500">Resources</p>
+          <ul class="mt-4 space-y-2.5">
+            <li><a href="/docs/" class="hover:text-white">Documentation</a></li>
+            <li><a href="/setup/" class="hover:text-white">Setup</a></li>
+            <li><a href="/cli/" class="hover:text-white">CLI reference</a></li>
+          </ul>
+        </div>
+        <div>
+          <p class="font-mono text-[11px] uppercase tracking-wider text-zinc-500">Project</p>
+          <ul class="mt-4 space-y-2.5">
+            <li><a href="/roadmap/" class="hover:text-white">Roadmap</a></li>
+            <li><a href="/privacy/" class="hover:text-white">Privacy</a></li>
+            <li><a href={repo} class="hover:text-white">GitHub</a></li>
+          </ul>
+        </div>
+      </div>
+      <div class="mx-auto mt-12 flex max-w-6xl flex-col gap-3 border-t border-white/[0.08] px-5 pt-6 text-xs text-zinc-600 md:flex-row md:justify-between">
+        <span>© {year} shipnote</span>
+        <span class="font-mono">nightly dataset · 00:00 IST · nothing posts automatically</span>
       </div>
     </footer>
   </body>

@@ -1,60 +1,38 @@
 ---
-import Base from '../layouts/Base.astro';
+import Docs from '../layouts/Docs.astro';
+
 const stages = [
-  {
-    title: 'Fetch',
-    body: 'The nightly GitHub Action finds every public repo where your account made commits in the last 30 days, exports each commit with its full diff, scans the export for secrets, and uploads it as an artifact that expires after 10 days.',
-  },
-  {
-    title: 'Select',
-    body: 'Commits already used are skipped, as are commits from denylisted repos and trivial ones such as lockfile-only or formatting-only changes. The rest are ranked by message quality, diff size, new files, and whether behavior changes.',
-  },
-  {
-    title: 'Decide the mode',
-    body: 'If at least one story clears the score threshold, shipnote writes a story post about it. Otherwise it writes one theme post and no tweets.',
-  },
-  {
-    title: 'Draft',
-    body: 'The story or theme is sent to the agent you configure, along with voice samples and recent posts from agent-brain. The agent returns structured JSON, so every draft can be checked by code.',
-  },
-  {
-    title: 'Validate',
-    body: 'Every cited commit SHA must exist in the dataset, and every named file, function, or number must appear in that commit. Tweets must fit 280 characters including links. Claims that fail are dropped and logged.',
-  },
-  {
-    title: 'Review and approve',
-    body: 'You see each draft beside its evidence and approve, edit, or reject it. Nothing is marked as used until you run the command that does so, and nothing posts automatically.',
-  },
+  { title: 'Fetch', status: 'Working', body: 'The nightly GitHub Action finds every public repo where your account made commits in the last 30 days, exports each commit with its full diff, scans the export for secrets, and uploads it as an artifact that expires after 10 days.' },
+  { title: 'Select', status: 'Working', body: 'Commits already used are skipped, as are denylisted repos and trivial commits such as lockfile-only changes. The rest are ranked by change size, new files, and message quality.' },
+  { title: 'Decide the mode', status: 'Planned', body: 'If at least one story clears the threshold, shipnote writes a story post. Otherwise it writes one theme post and no tweets.' },
+  { title: 'Draft', status: 'Planned', body: 'The story goes to the agent you configure, with voice samples and recent posts from agent-brain. The agent returns structured JSON, so code can check every claim.' },
+  { title: 'Validate', status: 'Planned', body: 'Every cited SHA must exist in the dataset, and every named file, function, or number must appear in that commit. Tweets must fit 280 characters. Claims that fail are dropped and logged.' },
+  { title: 'Review and approve', status: 'Planned', body: 'You see each draft beside its evidence and approve, edit, or reject it. Nothing is marked used until you run the command that does so, and nothing posts automatically.' },
 ];
 ---
 
-<Base
-  title="How it works: shipnote"
-  description="How shipnote turns your public commits into tweets and blog drafts, with every claim checked against the commit it came from."
->
-  <main class="mx-auto max-w-3xl px-5 pt-20 pb-24">
-    <h1 class="text-4xl font-semibold tracking-tight">How it works</h1>
-    <p class="mt-4 text-lg text-zinc-400">
-      shipnote runs in two parts: a nightly export that runs on GitHub, and a drafting step you run yourself. Each stage below either succeeds with evidence or stops and tells you why.
-    </p>
+<Docs title="How it works: shipnote" description="How shipnote turns your public commits into tweets and blog drafts, with every claim checked against the commit it came from." active="/how-it-works/">
+  <p class="font-mono text-xs tracking-wider text-sky-400 uppercase">Pipeline</p>
+  <h1 class="text-gradient mt-3 text-4xl font-semibold tracking-[-0.035em] md:text-5xl">How it works</h1>
+  <p class="mt-4 text-lg leading-7 text-zinc-400">A nightly export runs on GitHub. Drafting and review run on your machine. Each stage either succeeds with evidence or stops and says why.</p>
 
-    <ol class="mt-14 space-y-6">
-      {stages.map((stage, i) => (
-        <li class="rounded-xl border border-white/[0.08] bg-zinc-950 p-6">
+  <ol class="mt-14 space-y-4">
+    {stages.map((s, i) => (
+      <li class="gradient-border rounded-2xl p-6">
+        <div class="flex items-center justify-between gap-4">
           <div class="flex items-baseline gap-3">
             <span class="font-mono text-xs text-sky-400">0{i + 1}</span>
-            <h2 class="text-lg font-semibold">{stage.title}</h2>
+            <h2 class="text-lg font-semibold">{s.title}</h2>
           </div>
-          <p class="mt-3 text-sm leading-relaxed text-zinc-400">{stage.body}</p>
-        </li>
-      ))}
-    </ol>
+          <span class:list={['font-mono text-[11px]', s.status === 'Working' ? 'text-sky-400' : 'text-zinc-500']}>{s.status}</span>
+        </div>
+        <p class="mt-3 text-sm leading-7 text-zinc-400">{s.body}</p>
+      </li>
+    ))}
+  </ol>
 
-    <div class="mt-14 rounded-xl border border-white/[0.08] p-6">
-      <h2 class="font-semibold">When something fails</h2>
-      <p class="mt-3 text-sm leading-relaxed text-zinc-400">
-        If the model is down, the dataset is partial, or every draft fails validation, shipnote writes a review file that explains what happened and produces no drafts. It does not retry forever or post a weaker substitute.
-      </p>
-    </div>
-  </main>
-</Base>
+  <div class="mt-12 rounded-2xl border border-white/[0.08] bg-white/[0.02] p-6">
+    <h2 class="font-semibold">When something fails</h2>
+    <p class="mt-3 text-sm leading-7 text-zinc-400">If the model is down, the dataset is partial, or every draft fails validation, shipnote writes a review file that explains what happened and produces no drafts. It does not retry forever or post a weaker substitute.</p>
+  </div>
+</Docs>
