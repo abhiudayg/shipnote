@@ -78,3 +78,23 @@ describe("agentCommand", () => {
     expect(stdin).toBe("hello");
   });
 });
+
+describe("budget settings", () => {
+  test("reads the budget table", () => {
+    const config = parseConfig({ budget: { max_tokens_per_run: 5000, max_cost_usd_per_run: 0.5, max_retries: 1 } });
+    expect(config.budget).toEqual({ maxTokens: 5000, maxCostUsd: 0.5, maxRetries: 1 });
+  });
+
+  test("uses defaults when the budget table is missing", () => {
+    expect(parseConfig({}).budget.maxRetries).toBe(2);
+  });
+
+  test("rejects a negative limit", () => {
+    expect(() => parseConfig({ budget: { max_tokens_per_run: -1 } })).toThrow("must be a non-negative number");
+  });
+
+  test("reads an optional provider price", () => {
+    const config = parseConfig({ agent: { providers: { agy: { command: "agy", prompt_mode: "arg", model: "m", effort: "e", usd_per_million_tokens: 0.3 } } } });
+    expect(config.providers.agy.usdPerMillionTokens).toBe(0.3);
+  });
+});

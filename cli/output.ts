@@ -9,6 +9,7 @@ export type RunInfo = {
   effort: string;
   selected: number;
   skipped: number;
+  usage?: string;
   error?: string;
 };
 
@@ -54,7 +55,7 @@ function sourcesJson(result: Checked, commits: Commit[], date: string): string {
   const describe = (shas: string[]) =>
     shas.map((sha) => {
       const commit = byHash.get(sha);
-      return { sha, repo: commit?.repo ?? null, files: commit?.files ?? [] };
+      return { sha, repo: commit?.repo ?? null, subject: commit?.subject ?? null, files: commit?.files ?? [] };
     });
   const claims = [
     ...result.draft.tweets.map((tweet, index) => ({ item: `tweet ${index + 1}`, text: tweet.text, commits: describe(tweet.shas) })),
@@ -73,6 +74,7 @@ function reviewMarkdown(result: Checked | null, info: RunInfo): string {
     `- Commits selected: ${info.selected}; skipped: ${info.skipped}`,
     "- Mode: story (theme mode is not built yet)",
   ];
+  if (info.usage) lines.push(`- Usage: ${info.usage}`);
   if (info.error) {
     lines.push("", "## Failure", "", info.error, "", "No drafts were written.");
     return `${lines.join("\n")}\n`;
