@@ -1,6 +1,8 @@
 import { existsSync, readFileSync, rmSync } from "node:fs";
 import { join } from "node:path";
+import { approve, draftIds, readApproved, writeApproved } from "./approval";
 import { importPatches } from "./archive";
+import { mergeLedger, readLedger, validateShas, writeLedger } from "./ledger";
 import { buildPrompt, check, parseDraft } from "./draft";
 import { parsePatch, type Commit } from "./patch";
 import { writeDrafts } from "./output";
@@ -58,8 +60,55 @@ async function loadCommits(dir: string): Promise<Commit[]> {
 }
 
 function loadLedger(): Set<string> {
-  if (!existsSync(LEDGER)) return new Set();
-  return new Set(JSON.parse(readFileSync(LEDGER, "utf8")) as string[]);
+  return new Set(readLedger(LEDGER));
+}
+
+function positionals(args: string[]): string[] {
+  return args.filter((arg, index) => !arg.startsWith("--") && !(index > 0 && args[index - 1] === "--date"));
+}
+
+function draftPath(date: string, file: string): string {
+  return join(DRAFTS, date, file);
+}
+
+function claimItems(date: string): string[] {
+  const path = draftPath(date, "sources.json");
+  if (!existsSync(path)) throw new Error(`no drafts for ${date}; run "shipnote draft --date ${date}" first`);
+  const sources = JSON.parse(readFileSync(path, "utf8")) as { claims: Array<{ item: string }> };
+  return sources.claims.map((claim) => claim.item);
+}
+
+async function approveDraft(args: string[]): Promise<void> {
+  const [id] = positionals(args);
+  if (!id) throw new Error("usage: shipnote approve <draft-id> [--date YYYY-MM-DD]");
+  const date = flag(args, "--date") ?? today();
+  const path = draftPath(date, "approved.json");
+  const approved = approve(readApproved(path), id, draftIds(claimItems(date)));
+  writeApproved(path, approved);
+  console.log(`approved ${id} for ${date}. Nothing was posted.`);
+}
+
+async function markUsed(args: string[]): Promise<void> {
+  const shas = positionals(args);
+  if (shas.length === 0) throw new Error("usage: shipnote mark-used <sha> [<sha> ...]");
+  validateShas(shas);
+  const merged = mergeLedger(readLedger(LEDGER), shas);
+  writeLedger(LEDGER, merged);
+  console.log(`marked ${shas.length} commit(s) as used; ledger holds ${merged.length}`);
+}
+
+async function showStatus(args: string[]): Promise<void> {
+  const date = flag(args, "--date") ?? today();
+  const dir = join(DRAFTS, date);
+  if (!existsSync(dir)) {
+    console.log(`${date}: no drafts. Run "shipnote draft --date ${date}".`);
+  } else {
+    const items = claimItems(date);
+    const approved = readApproved(draftPath(date, "approved.json"));
+    console.log(`${date}: drafts ${items.length > 0 ? items.join(", ") : "none"}`);
+    console.log(`approved: ${approved.length > 0 ? approved.join(", ") : "none"}`);
+  }
+  console.log(`ledger: ${readLedger(LEDGER).length} used commit(s)`);
 }
 
 async function selectCommits(args: string[]): Promise<void> {
@@ -149,11 +198,19 @@ const commands: Record<string, (args: string[]) => Promise<void>> = {
   import: importArchive,
   select: selectCommits,
   draft: draftPosts,
+  approve: approveDraft,
+  "mark-used": markUsed,
+  status: showStatus,
 };
 
 if (!command || !commands[command]) {
-  console.log("usage: shipnote <fetch|import|select|draft> [--date YYYY-MM-DD] [--run ID] [--top N]");
+  console.log("usage: shipnote <fetch|import|select|draft|approve|mark-used|status> [--date YYYY-MM-DD] [--run ID] [--top N]");
   process.exit(command ? 1 : 0);
 }
 
-await commands[command](args);
+try {
+  await commands[command](args);
+} catch (error) {
+  console.error(`error: ${(error as Error).message}`);
+  process.exit(1);
+}
