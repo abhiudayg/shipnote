@@ -16,7 +16,7 @@ describe("evaluateCase", () => {
       ],
       blog: null,
     });
-    const result = await evaluateCase(evalCase, 0.6, "", async () => raw);
+    const result = await evaluateCase(evalCase, 0, "", async () => raw);
     expect(result).toMatchObject({ parsed: true, produced: 2, kept: 1, error: null });
   });
 
@@ -34,7 +34,7 @@ describe("evaluateCase", () => {
   });
 
   test("marks a mode mismatch against the expected mode", async () => {
-    const result = await evaluateCase({ ...evalCase, expectMode: "theme" }, 0.6, "", async () => "{}");
+    const result = await evaluateCase({ ...evalCase, expectMode: "theme" }, 0, "", async () => "{}");
     expect(result.modeMatch).toBe(false);
   });
 });
