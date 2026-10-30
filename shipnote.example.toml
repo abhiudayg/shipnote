@@ -29,6 +29,15 @@ min_story_score = 0.6
 [context]
 token_budget = 4000
 
+[budget]
+max_tokens_per_run = 200000
+max_cost_usd_per_run = 1.00
+max_retries = 3
+
+[dedup]
+window_days = 30
+similarity_threshold = 0.85
+
 [drafts]
 tweets_max = 3
 tweet_max_chars = 280
