@@ -9,6 +9,7 @@ mkdir -p .verify/artifacts
   xmllint --noout assets/logo.svg && echo "logo svg ok"
   (cd website && bun install --frozen-lockfile && bun run build)
   bun test cli
+  bunx tsc -p tsconfig.json
   shellcheck scripts/release-notes.sh
   scripts/release-notes.sh "$(jq -r .version package.json)" >/dev/null
   ruby -ryaml -e 'YAML.load_file(".github/workflows/release.yml"); puts "release workflow yaml ok"'

@@ -16,6 +16,8 @@ export type Config = {
   denylistRepos: string[];
   denylistTerms: string[];
   budget: Budget;
+  minStoryScore: number;
+  contextTokenBudget: number;
 };
 
 const DEFAULT_PROVIDER: Provider = {
@@ -33,6 +35,8 @@ export const DEFAULT_CONFIG: Config = {
   denylistRepos: [],
   denylistTerms: [],
   budget: DEFAULT_BUDGET,
+  minStoryScore: 0.6,
+  contextTokenBudget: 4000,
 };
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -96,12 +100,15 @@ export function parseConfig(value: unknown): Config {
   const provider = typeof agent.provider === "string" ? agent.provider : Object.keys(providers)[0];
   if (!provider || !providers[provider]) throw new Error(`agent.provider "${provider}" is not defined in [agent.providers]`);
   const selection = isRecord(value.selection) ? value.selection : {};
+  const context = isRecord(value.context) ? value.context : {};
   return {
     provider,
     providers,
     denylistRepos: stringList(selection.denylist_repos, "selection.denylist_repos"),
     denylistTerms: stringList(selection.denylist_terms, "selection.denylist_terms"),
     budget: toBudget(value.budget),
+    minStoryScore: number(selection.min_story_score, DEFAULT_CONFIG.minStoryScore, "selection.min_story_score"),
+    contextTokenBudget: number(context.token_budget, DEFAULT_CONFIG.contextTokenBudget, "context.token_budget"),
   };
 }
 

@@ -4,15 +4,21 @@ import { approve, draftIds, readApproved, writeApproved } from "./approval";
 import { importPatches } from "./archive";
 import { checkBudget, estimateCostUsd, estimateTokens } from "./budget";
 import { altText, BLOG_SIZE, excerptCard, excerptMatchesDiff, firstExcerpt, TWEET_SIZE } from "./media";
+import { evaluateCase, type EvalCase, summarize } from "./eval";
+import { score } from "./select";
 import { agentCommand, loadConfig, type Config, type Provider } from "./config";
 import { mergeLedger, readLedger, validateShas, writeLedger } from "./ledger";
-import { buildPrompt, check, MAX_TWEET_CHARS, parseDraft } from "./draft";
+import { buildPrompt, check, chooseMode, MAX_TWEET_CHARS, parseDraft } from "./draft";
 import { parsePatch, type Commit } from "./patch";
 import { writeDrafts } from "./output";
 import { select, type Rules } from "./select";
 
 const ARCHIVE = "archive";
 const DRAFTS = "drafts";
+const VOICE_DIR = "voice";
+const EVAL_CASES = join("eval", "cases");
+const EVAL_RESULTS = join("eval", "results");
+const THEME_EXAMPLES = 10;
 const LEDGER = "ledger.json";
 
 const CONFIG = "shipnote.toml";
@@ -167,6 +173,82 @@ async function callAgent(provider: Provider, prompt: string): Promise<string> {
   return stdout;
 }
 
+function loadCases(): EvalCase[] {
+  if (!existsSync(EVAL_CASES)) return [];
+  return [...new Bun.Glob("*.json").scanSync(EVAL_CASES)].sort().map((file) => {
+    const value = JSON.parse(readFileSync(join(EVAL_CASES, file), "utf8")) as EvalCase;
+    if (typeof value.name !== "string" || typeof value.notes !== "string" || !Array.isArray(value.commits) || value.commits.length === 0) {
+      throw new Error(`${file} is not a valid eval case`);
+    }
+    return value;
+  });
+}
+
+async function evalAdd(args: string[]): Promise<void> {
+  const [name] = positionals(args);
+  const date = flag(args, "--date");
+  const shas = (flag(args, "--sha") ?? "").split(",").filter(Boolean);
+  const expectMode = flag(args, "--expect") ?? "story";
+  const notes = flag(args, "--notes");
+  if (!name || !date || shas.length === 0 || !notes) {
+    throw new Error("usage: shipnote eval-add <name> --date D --sha SHA[,SHA] --expect story|theme --notes TEXT");
+  }
+  if (expectMode !== "story" && expectMode !== "theme") throw new Error(`--expect must be story or theme`);
+  const commits = await loadCommits(join(ARCHIVE, date));
+  const chosen = shas.map((prefix) => {
+    const matches = commits.filter((commit) => commit.sha.startsWith(prefix));
+    if (matches.length !== 1) throw new Error(`expected one commit starting with ${prefix}, found ${matches.length}`);
+    return matches[0];
+  });
+  mkdirSync(EVAL_CASES, { recursive: true });
+  const evalCase: EvalCase = { name, expectMode, notes, commits: chosen };
+  writeFileSync(join(EVAL_CASES, `${name}.json`), `${JSON.stringify(evalCase, null, 2)}\n`);
+  console.log(`saved case ${name} with ${chosen.length} commit(s)`);
+}
+
+async function runEval(args: string[]): Promise<void> {
+  const config = loadConfig(CONFIG);
+  const provider = resolvedProvider(config);
+  const cases = loadCases();
+  if (cases.length === 0) throw new Error(`no eval cases in ${EVAL_CASES}; add one with eval-add`);
+  const voice = loadVoice(config.contextTokenBudget * 4);
+
+  if (args.includes("--dry-run")) {
+    for (const evalCase of cases) {
+      const mode = chooseMode(Math.max(...evalCase.commits.map(score)), config.minStoryScore);
+      const tokens = estimateTokens(buildPrompt(evalCase.commits, mode, voice));
+      console.log(`${evalCase.name}: mode ${mode} (expected ${evalCase.expectMode}), prompt about ${tokens} tokens`);
+    }
+    return;
+  }
+
+  const results = [];
+  for (const evalCase of cases) {
+    const result = await evaluateCase(evalCase, config.minStoryScore, voice, async (prompt) => {
+      const refusal = checkBudget(estimateTokens(prompt), provider.usdPerMillionTokens, config.budget);
+      if (refusal) throw new Error(refusal);
+      return callWithRetries(provider, prompt, config.budget.maxRetries);
+    });
+    results.push(result);
+    console.log(`${result.name}: mode ${result.mode} (expected ${result.expectMode}), kept ${result.kept}/${result.produced}${result.error ? `, error: ${result.error}` : ""}`);
+  }
+
+  const summary = summarize(results);
+  mkdirSync(EVAL_RESULTS, { recursive: true });
+  const stamp = new Date().toISOString().replace(/[:.]/g, "-");
+  writeFileSync(join(EVAL_RESULTS, `${stamp}.json`), `${JSON.stringify({ model: provider.model, effort: provider.effort, summary, results }, null, 2)}\n`);
+  console.log(`summary: ${JSON.stringify(summary)}`);
+}
+
+function loadVoice(maxChars: number): string {
+  if (!existsSync(VOICE_DIR)) return "";
+  const files = [...new Bun.Glob("*.md").scanSync(VOICE_DIR)].sort();
+  return files
+    .map((file) => readFileSync(join(VOICE_DIR, file), "utf8"))
+    .join("\n\n")
+    .slice(0, maxChars);
+}
+
 async function callWithRetries(provider: Provider, prompt: string, retries: number): Promise<string> {
   for (let attempt = 0; ; attempt += 1) {
     try {
@@ -252,9 +334,10 @@ async function draftPosts(args: string[]): Promise<void> {
   const provider = resolvedProvider(config);
   const commits = await loadCommits(join(ARCHIVE, date));
   const { selected, skipped } = select(commits, currentRules(config));
-  const chosen = selected.slice(0, top);
+  const mode = chooseMode(selected[0]?.score, config.minStoryScore);
+  const chosen = mode === "story" ? selected.slice(0, top) : selected.slice(0, THEME_EXAMPLES);
   const dir = join(DRAFTS, date);
-  const info = { date, model: provider.model, effort: provider.effort, selected: chosen.length, skipped: skipped.length };
+  const info = { date, mode, model: provider.model, effort: provider.effort, selected: chosen.length, skipped: skipped.length };
 
   if (chosen.length === 0) {
     writeDrafts(dir, null, [], { ...info, error: "No commits passed selection, so there is nothing to draft." });
@@ -262,7 +345,7 @@ async function draftPosts(args: string[]): Promise<void> {
     return;
   }
 
-  const prompt = buildPrompt(chosen);
+  const prompt = buildPrompt(chosen, mode, loadVoice(config.contextTokenBudget * 4));
   const tokens = estimateTokens(prompt);
   const cost = estimateCostUsd(tokens, provider.usdPerMillionTokens);
   const usage = `prompt about ${tokens} tokens and $${cost.toFixed(4)} (estimates; the agent CLI reports no usage)`;
@@ -292,7 +375,7 @@ async function draftPosts(args: string[]): Promise<void> {
     return;
   }
 
-  const result = check(draft, chosen);
+  const result = check(mode === "theme" ? { ...draft, tweets: [] } : draft, chosen);
   writeDrafts(dir, result, chosen, runInfo);
   console.log(`${date}: ${result.draft.tweets.length} tweet(s), blog ${result.draft.blog ? "yes" : "no"}; see ${dir}`);
 }
@@ -318,10 +401,12 @@ const commands: Record<string, (args: string[]) => Promise<void>> = {
   status: showStatus,
   review: reviewDrafts,
   media: hookMedia,
+  "eval-add": evalAdd,
+  eval: runEval,
 };
 
 if (!command || !commands[command]) {
-  console.log("usage: shipnote <fetch|import|select|draft|media|review|approve|mark-used|status> [--date YYYY-MM-DD] [--run ID] [--top N]");
+  console.log("usage: shipnote <fetch|import|select|draft|media|review|approve|mark-used|status|eval-add|eval> [--date YYYY-MM-DD] [--run ID] [--top N]");
   process.exit(command ? 1 : 0);
 }
 

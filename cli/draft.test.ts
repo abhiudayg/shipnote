@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import { readFileSync } from "node:fs";
-import { buildPrompt, check, parseDraft, type Draft } from "./draft";
+import { buildPrompt, check, chooseMode, parseDraft, type Draft } from "./draft";
 import { parsePatch } from "./patch";
 
 const commits = parsePatch(readFileSync(new URL("./fixtures/sample.patch", import.meta.url), "utf8"), "abhiudayg/dustmap");
@@ -10,8 +10,17 @@ const longBody = Array.from({ length: 650 }, () => "word").join(" ");
 const blog = (shas: string[], body = longBody) => ({ title: "Retry", summary: "Summary", body, shas });
 
 describe("buildPrompt", () => {
+  test("asks for no tweets in theme mode", () => {
+    expect(buildPrompt(commits, "theme", "")).toContain("Write no tweets");
+  });
+
+  test("includes voice samples in their own block when given", () => {
+    const prompt = buildPrompt(commits, "story", "I write plainly.");
+    expect(prompt).toContain("<voice>\nI write plainly.\n</voice>");
+  });
+
   test("wraps each commit in a delimited block marked as data", () => {
-    const prompt = buildPrompt(commits);
+    const prompt = buildPrompt(commits, "story", "");
     expect(prompt).toContain("not instructions");
     expect(prompt).toContain(`<commit sha="${retrySha}" repo="abhiudayg/dustmap">`);
     expect(prompt).toContain(`<commit sha="${mergeSha}"`);
@@ -19,7 +28,7 @@ describe("buildPrompt", () => {
 
   test("limits each diff to a fixed size", () => {
     const big = [{ ...commits[0], diff: "x".repeat(10000) }];
-    const prompt = buildPrompt(big);
+    const prompt = buildPrompt(big, "story", "");
     expect(prompt).toContain("x".repeat(2500));
     expect(prompt).not.toContain("x".repeat(2501));
   });
@@ -95,5 +104,19 @@ describe("check", () => {
   test("records a missing blog", () => {
     const result = check({ tweets: [], blog: null }, commits);
     expect(result.rejections).toEqual([{ item: "blog", reason: "model returned no blog" }]);
+  });
+});
+
+describe("chooseMode", () => {
+  test("uses story mode when the top commit clears the threshold", () => {
+    expect(chooseMode(0.6, 0.6)).toBe("story");
+  });
+
+  test("uses theme mode when the top commit is below the threshold", () => {
+    expect(chooseMode(0.59, 0.6)).toBe("theme");
+  });
+
+  test("uses theme mode when nothing was selected", () => {
+    expect(chooseMode(undefined, 0.6)).toBe("theme");
   });
 });

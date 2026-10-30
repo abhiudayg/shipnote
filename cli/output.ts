@@ -1,10 +1,11 @@
 import { mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import type { Checked } from "./draft";
+import type { Checked, Mode } from "./draft";
 import type { Commit } from "./patch";
 
 export type RunInfo = {
   date: string;
+  mode: Mode;
   model: string;
   effort: string;
   selected: number;
@@ -30,7 +31,7 @@ function tweetsMarkdown(result: Checked, commits: Commit[], date: string): strin
   return `# Tweets for ${date}\n\n${body}\n`;
 }
 
-function blogMarkdown(result: Checked, date: string): string {
+function blogMarkdown(result: Checked, date: string, mode: Mode): string {
   const blog = result.draft.blog;
   if (!blog) return `# Blog for ${date}\n\nNo blog post passed validation. See review.md.\n`;
   const shas = blog.shas.map((sha) => `  - ${sha}`).join("\n");
@@ -38,7 +39,7 @@ function blogMarkdown(result: Checked, date: string): string {
     "---",
     `title: ${JSON.stringify(blog.title)}`,
     `date: ${date}`,
-    "mode: story",
+    `mode: ${mode}`,
     "shas:",
     shas,
     "---",
@@ -72,7 +73,7 @@ function reviewMarkdown(result: Checked | null, info: RunInfo): string {
     "",
     `- Model: ${info.model} (effort ${info.effort})`,
     `- Commits selected: ${info.selected}; skipped: ${info.skipped}`,
-    "- Mode: story (theme mode is not built yet)",
+    `- Mode: ${info.mode}`,
   ];
   if (info.usage) lines.push(`- Usage: ${info.usage}`);
   if (info.error) {
@@ -92,6 +93,6 @@ export function writeDrafts(dir: string, result: Checked | null, commits: Commit
   writeFileSync(join(dir, "review.md"), reviewMarkdown(result, info));
   if (!result) return;
   writeFileSync(join(dir, "tweets.md"), tweetsMarkdown(result, commits, info.date));
-  writeFileSync(join(dir, "blog.md"), blogMarkdown(result, info.date));
+  writeFileSync(join(dir, "blog.md"), blogMarkdown(result, info.date, info.mode));
   writeFileSync(join(dir, "sources.json"), sourcesJson(result, commits, info.date));
 }

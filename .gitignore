@@ -9,3 +9,6 @@ website/.astro/
 archive/
 ledger.json
 drafts/
+voice/
+media/
+eval/results/
