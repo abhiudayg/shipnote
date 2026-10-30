@@ -12,6 +12,10 @@ Each release's notes are taken from its section below, so write entries for what
 - `shipnote.toml` support for the agent provider, model, command template, denylist, and budget limits.
 - `review` command that shows each draft with its approval state, its length, and the commit evidence behind it.
 - Budget checks before any agent call, with retries and a usage estimate logged in `review.md`.
+- `media` command that renders the first clean diff excerpt as SVG cards at tweet and blog sizes. Each excerpt is checked against the commit diff, and excerpts matching secret patterns are refused.
+- Theme mode for days with no commit above `min_story_score`. It writes one blog post and no tweets, from recent commits as examples.
+- Voice samples read from a local `voice/` folder, within the context budget.
+- `eval-add` and `eval` commands that run saved commit cases and report mode, parse, and validation rates.
 
 ### Changed
 
