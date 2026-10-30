@@ -5,6 +5,7 @@ import { importPatches } from "./archive";
 import { checkBudget, estimateCostUsd, estimateTokens } from "./budget";
 import { altText, BLOG_SIZE, excerptCard, excerptMatchesDiff, firstExcerpt, TWEET_SIZE } from "./media";
 import { evaluateCase, type EvalCase, summarize } from "./eval";
+import { recallFacts, runCommand } from "./recall";
 import { score } from "./select";
 import { agentCommand, loadConfig, type Config, type Provider } from "./config";
 import { mergeLedger, readLedger, validateShas, writeLedger } from "./ledger";
@@ -211,7 +212,7 @@ async function runEval(args: string[]): Promise<void> {
   const provider = resolvedProvider(config);
   const cases = loadCases();
   if (cases.length === 0) throw new Error(`no eval cases in ${EVAL_CASES}; add one with eval-add`);
-  const voice = loadVoice(config.contextTokenBudget * 4);
+  const voice = (await loadVoice(config)).text;
 
   if (args.includes("--dry-run")) {
     for (const evalCase of cases) {
@@ -240,13 +241,20 @@ async function runEval(args: string[]): Promise<void> {
   console.log(`summary: ${JSON.stringify(summary)}`);
 }
 
-function loadVoice(maxChars: number): string {
+function readVoiceFolder(): string {
   if (!existsSync(VOICE_DIR)) return "";
   const files = [...new Bun.Glob("*.md").scanSync(VOICE_DIR)].sort();
-  return files
-    .map((file) => readFileSync(join(VOICE_DIR, file), "utf8"))
-    .join("\n\n")
-    .slice(0, maxChars);
+  return files.map((file) => readFileSync(join(VOICE_DIR, file), "utf8")).join("\n\n");
+}
+
+async function loadVoice(config: Config): Promise<{ text: string; note: string }> {
+  const folder = readVoiceFolder();
+  const recalled = await recallFacts(runCommand, null, config.voiceTag);
+  const facts = recalled.facts.map((fact) => fact.text);
+  const text = [folder, ...facts].filter(Boolean).join("\n\n").slice(0, config.contextTokenBudget * 4);
+  const failure = recalled.error ? `, recall failed: ${recalled.error}` : "";
+  const note = `${facts.length} fact(s) tagged ${config.voiceTag} from agent-brain${failure}; voice folder ${folder ? "included" : "absent"}`;
+  return { text, note };
 }
 
 async function callWithRetries(provider: Provider, prompt: string, retries: number): Promise<string> {
@@ -345,11 +353,12 @@ async function draftPosts(args: string[]): Promise<void> {
     return;
   }
 
-  const prompt = buildPrompt(chosen, mode, loadVoice(config.contextTokenBudget * 4));
+  const voice = await loadVoice(config);
+  const prompt = buildPrompt(chosen, mode, voice.text);
   const tokens = estimateTokens(prompt);
   const cost = estimateCostUsd(tokens, provider.usdPerMillionTokens);
   const usage = `prompt about ${tokens} tokens and $${cost.toFixed(4)} (estimates; the agent CLI reports no usage)`;
-  const runInfo = { ...info, usage };
+  const runInfo = { ...info, usage, voice: voice.note };
   const refusal = checkBudget(tokens, provider.usdPerMillionTokens, config.budget);
   if (refusal) {
     writeDrafts(dir, null, chosen, { ...runInfo, error: `Budget check failed: ${refusal}. No agent call was made.` });

@@ -15,6 +15,7 @@ Each release's notes are taken from its section below, so write entries for what
 - `media` command that renders the first clean diff excerpt as SVG cards at tweet and blog sizes. Each excerpt is checked against the commit diff, and excerpts matching secret patterns are refused.
 - Theme mode for days with no commit above `min_story_score`. It writes one blog post and no tweets, from recent commits as examples.
 - Voice samples read from a local `voice/` folder, within the context budget.
+- Voice facts read from agent-brain with `agent-brain recall --json`, filtered by the `voice_tag` setting. If agent-brain is unavailable, drafting continues and `review.md` records the error.
 - `eval-add` and `eval` commands that run saved commit cases and report mode, parse, and validation rates.
 
 ### Changed

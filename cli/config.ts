@@ -18,6 +18,7 @@ export type Config = {
   budget: Budget;
   minStoryScore: number;
   contextTokenBudget: number;
+  voiceTag: string;
 };
 
 const DEFAULT_PROVIDER: Provider = {
@@ -37,6 +38,7 @@ export const DEFAULT_CONFIG: Config = {
   budget: DEFAULT_BUDGET,
   minStoryScore: 0.6,
   contextTokenBudget: 4000,
+  voiceTag: "voice",
 };
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -109,6 +111,7 @@ export function parseConfig(value: unknown): Config {
     budget: toBudget(value.budget),
     minStoryScore: number(selection.min_story_score, DEFAULT_CONFIG.minStoryScore, "selection.min_story_score"),
     contextTokenBudget: number(context.token_budget, DEFAULT_CONFIG.contextTokenBudget, "context.token_budget"),
+    voiceTag: typeof context.voice_tag === "string" ? context.voice_tag : DEFAULT_CONFIG.voiceTag,
   };
 }
 

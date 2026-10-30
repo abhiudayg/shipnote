@@ -11,6 +11,7 @@ export type RunInfo = {
   selected: number;
   skipped: number;
   usage?: string;
+  voice?: string;
   error?: string;
 };
 
@@ -76,6 +77,7 @@ function reviewMarkdown(result: Checked | null, info: RunInfo): string {
     `- Mode: ${info.mode}`,
   ];
   if (info.usage) lines.push(`- Usage: ${info.usage}`);
+  if (info.voice) lines.push(`- Voice: ${info.voice}`);
   if (info.error) {
     lines.push("", "## Failure", "", info.error, "", "No drafts were written.");
     return `${lines.join("\n")}\n`;

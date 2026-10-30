@@ -28,6 +28,7 @@ min_story_score = 0.6
 
 [context]
 token_budget = 4000
+voice_tag = "voice"
 
 [budget]
 max_tokens_per_run = 200000
