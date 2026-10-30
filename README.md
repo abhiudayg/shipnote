@@ -2,84 +2,145 @@
   <img src="assets/logo.svg" width="128" alt="shipnote logo">
 </p>
 
-# shipnote
+<h1 align="center">shipnote</h1>
 
-shipnote turns the work you ship into posts. It starts with a nightly GitHub Action that builds a dataset of your recent public commits, with full diffs. A drafting CLI, planned next, will use that dataset to write tweets and blog posts that a human approves before anything is published.
+<p align="center">
+  Turn the work you ship into posts you approve.
+</p>
 
-This repo is a template. Fork it, set two settings, and the nightly dataset job runs against your own account.
+<p align="center">
+  <a href="https://shipnote-website.vercel.app">Website</a> ·
+  <a href="https://shipnote-website.vercel.app/setup/">Setup</a> ·
+  <a href="https://shipnote-website.vercel.app/roadmap/">Roadmap</a>
+</p>
 
-## How it works
+---
 
-1. **Discover repos.** One GraphQL call to GitHub's contribution data lists every repo where the account made commits in the window. Private repos are dropped.
-2. **Export commits.** For each repo, a shallow `git clone` and `git log -p` write commit metadata and full patches to `dataset/<owner>/<repo>.patch`. Git clones don't use the REST API, so the job stays well inside rate limits even for 30 days of history.
-3. **Scan for secrets.** Gitleaks scans `dataset/`. A finding fails the run before anything is uploaded.
-4. **Upload.** `dataset/` is uploaded as a workflow artifact with `retention-days: 10`. GitHub deletes it automatically after that.
+shipnote reads your public commits, drafts tweets and blog posts from them, and leaves every post for you to approve. Each claim in a draft cites the commit it came from. Nothing publishes on its own.
 
-Each run rebuilds the full window from git, so nothing needs to persist between runs. The dataset is a snapshot, not a history.
+It runs in two parts:
 
-## Setup
+1. **A nightly GitHub Action** exports your public commits and full diffs as an artifact. It runs on your own GitHub account.
+2. **A local CLI** downloads that artifact, archives it, and selects which commits are worth writing about. Drafting, review, and approval are the next milestones.
 
-1. **Fork or use this template** on GitHub.
-2. **Enable Actions** in your fork. Forks have Actions turned off by default.
-3. **Set a repository variable** `DATASET_AUTHOR` (Settings → Secrets and variables → Actions → Variables). This is the git author name or email that matches your commits, for example `Jane Doe` or `jane@example.com`. Check it with `git config user.name` and `git config user.email`.
-4. **Run it once manually** (Actions → nightly-dataset → Run workflow) with `days` set to `30` to build the initial dataset. Scheduled runs use the default of 30 days.
+## Status
 
-The job exports the account that owns the repository (`github.repository_owner`), so the fork needs no other configuration.
+| Part | State |
+|---|---|
+| Nightly dataset Action | Working. Builds a 30-day dataset, scans it for secrets, and uploads it as an artifact that expires after 10 days. |
+| `shipnote fetch` | Working. Downloads and archives the latest successful dataset. |
+| `shipnote select` | Working. Parses commits, skips merges, lockfile-only changes, used commits, and denylisted repos, and ranks the rest. |
+| Drafting, media, review, approval | Not built yet. See the [roadmap](https://shipnote-website.vercel.app/roadmap/). |
+| Website | Live on Vercel. Custom domain not connected yet. |
 
-## Schedule
+## Quick start
 
-The workflow runs at `30 18 * * *` UTC, which is 00:00 IST. To run at another time, change the cron expression in `.github/workflows/nightly-dataset.yml`. GitHub's cron runs in UTC and can start several minutes late.
-
-Scheduled workflows in public repositories are disabled after 60 days without repository activity.
-
-## Running locally
-
-Requires `git` and the GitHub CLI (`gh`), authenticated with `gh auth login`.
+You need [Bun](https://bun.sh), [git](https://git-scm.com), and the [GitHub CLI](https://cli.github.com) signed in with `gh auth login`.
 
 ```bash
-LOGIN=your-github-login AUTHOR="Your Name" DAYS=7 scripts/export-commits.sh out
+bun install
+bun cli/shipnote.ts fetch          # download and archive the latest dataset
+bun cli/shipnote.ts select         # rank the commits worth a post
 ```
 
-`LOGIN` and `AUTHOR` are required. `DAYS` defaults to 30. Output goes to `out/<owner>/<repo>.patch`.
-
-## Output format
-
-Each `.patch` file contains the matching commits in chronological order:
+Example output of `select`:
 
 ```
-commit <sha>
-Date: <author date, ISO 8601>
-Subject: <commit subject>
+2026-10-30: 450 commits, 447 selected, 3 skipped
 
-<commit body>
-
-diff --git a/... b/...
+ 1. 1.000  bc533d5  autonomic-ai-dev/agent-brain  refactor: debloat serve binary, honest metrics, Docker-style CLI help (#54)
+ 2. 0.976  9440c82  autonomic-ai-dev/website      feat: centralize organ documentation, update blogs, and enforce high-contrast typography (#6)
 ...
+
+skipped:
+  2 merge commit
+  1 no file changes
 ```
+
+## CLI reference
+
+```
+shipnote fetch  [--date YYYY-MM-DD] [--run ID]
+shipnote select [--date YYYY-MM-DD]
+```
+
+- `fetch` downloads the newest successful `nightly-dataset` run, or the run given by `--run`, into `archive/<date>/`. If that date is already archived, it does nothing.
+- `select` reads `archive/<date>/` and prints commits ranked by score. `--date` defaults to today in IST.
+
+Environment variables:
+
+| Variable | Default | Purpose |
+|---|---|---|
+| `SHIPNOTE_REPO` | `abhiudayg/shipnote` | The repo whose Action artifacts `fetch` downloads. Set this to your fork. |
+| `SHIPNOTE_DENYLIST` | empty | Comma-separated repos to exclude, for example `you/private-client`. |
+
+The ranking combines the size of the change (log scale), the number of new files, and whether the commit message is specific. Commits already in `ledger.json` are skipped.
+
+## Nightly dataset (GitHub Action)
+
+The workflow is in `.github/workflows/nightly-dataset.yml`. It runs at 18:30 UTC, which is 00:00 IST, and can also be triggered by hand with a `days` input (default 30).
+
+Each run:
+
+1. Finds every public repo where the account made commits in the window, using GitHub's contribution data. Private repos are not included.
+2. Clones each repo shallowly and writes its commits with full diffs to `dataset/<owner>/<repo>.patch`.
+3. Scans `dataset/` with gitleaks, pinned to `v8.18.4`, with a small allowlist in `.gitleaks.toml`. A finding fails the run before upload.
+4. Uploads `dataset/` as an artifact that expires after 10 days.
+
+To run it on your own account, fork this repo, then:
+
+1. Enable Actions in the fork. Forks have them off by default.
+2. Set the repository variable `DATASET_AUTHOR` to your git name or email, for example `Jane Doe`.
+3. Run the workflow once by hand with `days` set to `30`.
+
+The job reads the account from the repository owner, so a fork needs no other changes.
 
 ## Privacy
 
-- Only public repositories are exported.
-- The dataset contains full diffs, so anything committed to a public repo is included. Gitleaks catches common secret formats, but it is not a guarantee. Keep secrets out of commits.
-- Artifacts are visible to anyone with read access to the repository. Use a private fork if the dataset should not be public.
+- Only public repositories are exported. Private repos are not in the dataset.
+- The dataset contains full diffs. Anything committed to a public repo is in the artifact, and anyone with read access to the repo can download it for 10 days. Keep secrets out of commits.
+- Gitleaks catches common secret formats but is not a guarantee.
+- The website uses no analytics or tracking scripts.
 
-## Limits and retention
+## Configuration
 
-- Artifact retention is 10 days. Older datasets are removed by GitHub, not by this repo.
-- Storage: GitHub's billing docs list 500 MB of included artifact storage on the Free plan. They don't state a separate limit for public repositories. In a 30-day test export for one account, the dataset was about 26 MB.
+`shipnote.example.toml` is the planned configuration for the drafting step: the agent provider, model, effort, token and cost budgets, and dedup settings. Copy it to `shipnote.toml`, which is gitignored. The CLI does not read it yet.
 
 ## Project layout
 
 ```
-.github/workflows/nightly-dataset.yml   scheduled and manual job
-scripts/export-commits.sh               discovery, clone, export
+.github/workflows/nightly-dataset.yml   nightly export job
+scripts/export-commits.sh               discovery, clone, and export (used by the job and locally)
+.gitleaks.toml                          secret-scan allowlist for the dataset
+cli/                                    shipnote CLI: fetch, select, and the parser
+  shipnote.ts                           command entry point
+  patch.ts                              parses exported patches into commits
+  select.ts                             skip rules, scoring, and selection
+  select.test.ts                        tests against a fixture patch
+website/                                Astro + Tailwind site, deployed to Vercel
+assets/logo.svg                         logo used in the README
+.verify/run.sh                          verification: shellcheck, YAML, TOML, logo, website build, tests
+docs/                                   design notes (PRD, not published)
 ```
+
+## Development
+
+```bash
+bun install
+bun test cli                 # CLI unit tests
+bun cli/shipnote.ts select   # against a fetched archive
+cd website && bun run dev    # website at localhost:4321
+```
+
+Run the full verification with `.verify/run.sh`. It covers shellcheck on the export script, workflow and TOML parsing, the logo, the website build, and the CLI tests.
 
 ## Roadmap
 
-- `shipnote draft`: draft tweets and blog posts from the dataset, with each claim tied to a commit SHA. Agent and model settings live in [shipnote.example.toml](shipnote.example.toml).
-- Store per-day change summaries in agent-brain and pull them back as context during drafting.
-- Approval step before anything is published.
+- **Drafting:** tweets and blog drafts from the selected commits, using the agent you configure. Each claim must cite a commit SHA that exists in the dataset.
+- **Review and approval:** a review command that shows each draft beside its evidence, plus approve, edit, and mark-used steps.
+- **Evaluation set:** past commit clusters with the post each should have produced, used to judge every prompt or model change.
+
+The website's [roadmap page](https://shipnote-website.vercel.app/roadmap/) has the milestones.
 
 ## License
 

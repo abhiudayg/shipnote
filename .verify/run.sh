@@ -8,6 +8,7 @@ mkdir -p .verify/artifacts
   shellcheck scripts/export-commits.sh
   xmllint --noout assets/logo.svg && echo "logo svg ok"
   (cd website && bun install --frozen-lockfile && bun run build)
+  bun test cli
   ruby -ryaml -e 'YAML.load_file(".github/workflows/nightly-dataset.yml"); puts "workflow yaml ok"'
   bun -e 'const c = await import("./shipnote.example.toml"); console.log("shipnote config ok:", c.default.agent.provider)'
 } 2>&1 | tee .verify/artifacts/run.log

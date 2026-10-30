@@ -1,0 +1,11 @@
+{
+  "name": "shipnote",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "packageManager": "bun@1.4.4",
+  "scripts": {
+    "shipnote": "bun cli/shipnote.ts",
+    "test": "bun test cli"
+  }
+}

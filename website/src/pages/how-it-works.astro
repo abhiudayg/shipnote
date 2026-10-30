@@ -40,7 +40,7 @@ const stages = [
 
     <ol class="mt-14 space-y-6">
       {stages.map((stage, i) => (
-        <li class="rounded-xl border border-zinc-800 bg-zinc-950 p-6">
+        <li class="rounded-xl border border-white/[0.08] bg-zinc-950 p-6">
           <div class="flex items-baseline gap-3">
             <span class="font-mono text-xs text-sky-400">0{i + 1}</span>
             <h2 class="text-lg font-semibold">{stage.title}</h2>
@@ -50,7 +50,7 @@ const stages = [
       ))}
     </ol>
 
-    <div class="mt-14 rounded-xl border border-zinc-800 p-6">
+    <div class="mt-14 rounded-xl border border-white/[0.08] p-6">
       <h2 class="font-semibold">When something fails</h2>
       <p class="mt-3 text-sm leading-relaxed text-zinc-400">
         If the model is down, the dataset is partial, or every draft fails validation, shipnote writes a review file that explains what happened and produces no drafts. It does not retry forever or post a weaker substitute.

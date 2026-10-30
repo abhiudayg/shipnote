@@ -18,26 +18,30 @@ const features = [
   description="shipnote turns the work you ship into tweets and blog drafts. Every claim is tied to a commit, and nothing publishes without your approval."
 >
   <main>
-    <section class="mx-auto max-w-5xl px-5 pt-24 pb-20 text-center">
-      <h1 class="mx-auto max-w-3xl text-5xl leading-[1.08] font-semibold tracking-tight md:text-6xl">
+    <section class="px-5 pt-20 pb-20 text-center" style="background: radial-gradient(circle at 50% -10%, rgba(56, 189, 248, 0.07) 0%, rgba(0, 0, 0, 0) 65%);">
+      <div class="mx-auto mb-6 inline-flex items-center gap-2 rounded-full border border-white/[0.08] bg-zinc-950 px-3.5 py-1 font-mono text-xs text-zinc-400">
+        <span class="h-1.5 w-1.5 rounded-full bg-sky-400"></span>
+        Human-in-the-loop <span class="text-zinc-600">•</span> <span class="text-zinc-200">nightly at 00:00 IST</span>
+      </div>
+      <h1 class="mx-auto max-w-4xl text-[2rem] leading-[2.5rem] font-bold tracking-[-0.02em] md:text-[3.25rem] md:leading-[3.75rem] md:tracking-[-0.035em]">
         Turn what you ship into posts you approve.
       </h1>
       <p class="mx-auto mt-6 max-w-xl text-lg text-zinc-400">
         shipnote reads your public commits each night and drafts tweets and blog posts from them. Every claim is tied to a commit, and nothing goes out until you approve it.
       </p>
       <div class="mt-10 flex flex-wrap justify-center gap-3">
-        <a href={repo} class="rounded-lg bg-white px-5 py-2.5 text-sm font-medium text-black hover:opacity-85">View on GitHub</a>
-        <a href="/setup/" class="rounded-lg border border-zinc-800 px-5 py-2.5 text-sm font-medium hover:border-zinc-600">Read the setup guide</a>
+        <a href={repo} class="rounded-lg bg-sky-400 px-6 py-2.5 text-sm font-semibold text-black shadow-[0_0_20px_rgba(56,189,248,0.22)] hover:bg-sky-300">View on GitHub</a>
+        <a href="/setup/" class="rounded-lg border border-white/[0.08] px-5 py-2.5 text-sm font-medium hover:border-zinc-600">Read the setup guide</a>
       </div>
     </section>
 
-    <section class="border-t border-zinc-800 py-20">
+    <section class="border-t border-white/[0.08] py-20">
       <div class="mx-auto max-w-5xl px-5">
         <h2 class="text-3xl font-semibold tracking-tight">How it works</h2>
         <ol class="mt-10 grid gap-4 md:grid-cols-3">
           {steps.map((step, i) => (
-            <li class="rounded-xl border border-zinc-800 bg-zinc-950 p-6">
-              <span class="flex h-7 w-7 items-center justify-center rounded-full border border-zinc-800 text-xs text-sky-400">{i + 1}</span>
+            <li class="rounded-xl border border-white/[0.08] bg-zinc-950 p-6">
+              <span class="flex h-7 w-7 items-center justify-center rounded-full border border-white/[0.08] text-xs text-sky-400">{i + 1}</span>
               <h3 class="mt-4 font-semibold">{step.title}</h3>
               <p class="mt-2 text-sm text-zinc-400">{step.body}</p>
             </li>
@@ -47,12 +51,12 @@ const features = [
       </div>
     </section>
 
-    <section class="border-t border-zinc-800 py-20">
+    <section class="border-t border-white/[0.08] py-20">
       <div class="mx-auto max-w-5xl px-5">
         <h2 class="text-3xl font-semibold tracking-tight">Built to stay honest</h2>
         <div class="mt-10 grid gap-4 md:grid-cols-3">
           {features.map((f) => (
-            <div class="rounded-xl border border-zinc-800 bg-zinc-950 p-6">
+            <div class="rounded-xl border border-white/[0.08] bg-zinc-950 p-6">
               <h3 class="font-semibold">{f.title}</h3>
               <p class="mt-2 text-sm text-zinc-400">{f.body}</p>
             </div>
@@ -61,10 +65,10 @@ const features = [
       </div>
     </section>
 
-    <section class="border-t border-zinc-800 py-20">
+    <section class="border-t border-white/[0.08] py-20">
       <div class="mx-auto max-w-5xl px-5">
         <h2 class="text-3xl font-semibold tracking-tight">Get started in four steps</h2>
-        <pre class="mt-8 overflow-x-auto rounded-xl border border-zinc-800 bg-zinc-950 p-5 font-mono text-sm text-zinc-400"><code>1. Fork github.com/abhiudayg/shipnote
+        <pre class="mt-8 overflow-x-auto rounded-xl border border-white/[0.08] bg-zinc-950 p-5 font-mono text-sm text-zinc-400"><code>1. Fork github.com/abhiudayg/shipnote
 2. Enable Actions in your fork
 3. Set the repository variable DATASET_AUTHOR to your git name
 4. Run the nightly-dataset workflow once with days = 30</code></pre>

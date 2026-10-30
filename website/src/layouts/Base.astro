@@ -11,6 +11,7 @@ const repo = 'https://github.com/abhiudayg/shipnote';
 const navItems = [
   { label: 'How it works', href: '/how-it-works/' },
   { label: 'Setup', href: '/setup/' },
+  { label: 'CLI', href: '/cli/' },
   { label: 'Roadmap', href: '/roadmap/' },
   { label: 'Privacy', href: '/privacy/' },
 ];
@@ -27,12 +28,12 @@ const navItems = [
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap"
       rel="stylesheet"
     />
   </head>
   <body class="min-h-screen antialiased">
-    <header class="border-b border-zinc-800">
+    <header class="border-b border-white/[0.08]">
       <div class="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-y-3 px-5 py-4">
         <a href="/" class="flex items-center gap-2.5 text-sm font-semibold">
           <img src="/logo.svg" alt="" width="28" height="28" />
@@ -42,19 +43,21 @@ const navItems = [
           {navItems.map((item) => (
             <a href={item.href} class="hover:text-white">{item.label}</a>
           ))}
-          <a href={repo} class="hover:text-white">GitHub</a>
+          <a href={repo} class="hidden rounded-lg border border-white/[0.08] px-3 py-1.5 text-zinc-300 hover:border-white/[0.18] hover:text-white sm:inline-flex">Star on GitHub</a>
+          <a href="/setup/" class="rounded-lg bg-sky-400 px-3.5 py-1.5 font-semibold text-black hover:bg-sky-300">Get started</a>
         </nav>
       </div>
     </header>
 
     <slot />
 
-    <footer class="border-t border-zinc-800 py-8 text-sm text-zinc-400">
+    <footer class="border-t border-white/[0.08] py-8 text-sm text-zinc-400">
       <div class="mx-auto flex max-w-5xl flex-wrap justify-between gap-4 px-5">
         <span>shipnote</span>
         <nav class="flex flex-wrap gap-x-5 gap-y-2">
           <a href={repo} class="hover:text-white">GitHub</a>
           <a href="/setup/" class="hover:text-white">Setup</a>
+          <a href="/cli/" class="hover:text-white">CLI</a>
           <a href="/privacy/" class="hover:text-white">Privacy</a>
           <a href="/roadmap/" class="hover:text-white">Roadmap</a>
         </nav>

@@ -1,0 +1,40 @@
+commit 1111111111111111111111111111111111111111
+Date: 2026-10-29T10:00:00+05:30
+Subject: Add export retry with backoff
+
+Retries transient GitHub errors three times.
+
+diff --git a/scripts/retry.sh b/scripts/retry.sh
+new file mode 100644
+index 0000000..1234567
+--- /dev/null
++++ b/scripts/retry.sh
+@@ -0,0 +1,4 @@
++#!/usr/bin/env bash
++retry() {
++  for i in 1 2 3; do "$@" && return 0; done
++}
+
+commit 2222222222222222222222222222222222222222
+Date: 2026-10-28T09:00:00+05:30
+Subject: Merge pull request #5 from abhiudayg/topic
+
+diff --git a/README.md b/README.md
+index 1111111..2222222 100644
+--- a/README.md
++++ b/README.md
+@@ -1 +1 @@
+-old
++new
+
+commit 3333333333333333333333333333333333333333
+Date: 2026-10-27T08:00:00+05:30
+Subject: chore: bump dependencies
+
+diff --git a/bun.lock b/bun.lock
+index 3333333..4444444 100644
+--- a/bun.lock
++++ b/bun.lock
+@@ -1 +1 @@
+-a
++b

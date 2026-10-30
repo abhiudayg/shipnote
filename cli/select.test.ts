@@ -1,0 +1,68 @@
+import { describe, expect, test } from "bun:test";
+import { readFileSync } from "node:fs";
+import { parsePatch } from "./patch";
+import { score, select } from "./select";
+
+const sample = parsePatch(readFileSync(new URL("./fixtures/sample.patch", import.meta.url), "utf8"), "abhiudayg/dustmap");
+const retrySha = "1111111111111111111111111111111111111111";
+const mergeSha = "2222222222222222222222222222222222222222";
+const lockSha = "3333333333333333333333333333333333333333";
+
+describe("parsePatch", () => {
+  test("reads every commit with its metadata", () => {
+    expect(sample.map((c) => c.sha)).toEqual([retrySha, mergeSha, lockSha]);
+    expect(sample[0]).toMatchObject({
+      repo: "abhiudayg/dustmap",
+      date: "2026-10-29T10:00:00+05:30",
+      subject: "Add export retry with backoff",
+      body: "Retries transient GitHub errors three times.",
+      files: ["scripts/retry.sh"],
+      newFiles: 1,
+      added: 4,
+      removed: 0,
+    });
+  });
+
+  test("counts added and removed lines without counting file headers", () => {
+    expect(sample[1]).toMatchObject({ files: ["README.md"], added: 1, removed: 1 });
+  });
+
+  test("returns no commits for empty input", () => {
+    expect(parsePatch("", "abhiudayg/dustmap")).toEqual([]);
+  });
+});
+
+describe("select", () => {
+  test("keeps the substantive commit and skips merges and lockfile-only commits", () => {
+    const result = select(sample, new Set(), new Set());
+    expect(result.selected.map((c) => c.sha)).toEqual([retrySha]);
+    expect(result.skipped).toEqual([
+      { sha: mergeSha, reason: "merge commit" },
+      { sha: lockSha, reason: "lockfile only" },
+    ]);
+  });
+
+  test("skips commits already in the used ledger", () => {
+    const result = select(sample, new Set([retrySha]), new Set());
+    expect(result.selected).toEqual([]);
+    expect(result.skipped[0]).toEqual({ sha: retrySha, reason: "already used" });
+  });
+
+  test("skips every commit from a denylisted repo", () => {
+    const result = select(sample, new Set(), new Set(["abhiudayg/dustmap"]));
+    expect(result.selected).toEqual([]);
+    expect(result.skipped.every((skip) => skip.reason === "denylisted repo")).toBe(true);
+  });
+
+  test("ranks a larger change above a smaller one", () => {
+    const [small] = select(sample, new Set(), new Set()).selected;
+    const large = { ...small, added: 3000, removed: 200, newFiles: 4 };
+    expect(score(large)).toBeGreaterThan(score(small));
+  });
+
+  test("scores the selected commit between 0 and 1", () => {
+    const [only] = select(sample, new Set(), new Set()).selected;
+    expect(only.score).toBeGreaterThan(0);
+    expect(only.score).toBeLessThanOrEqual(1);
+  });
+});
