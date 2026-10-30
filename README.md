@@ -1,8 +1,8 @@
-# social-pipeline
+# shipnote
 
-A nightly GitHub Action that builds a dataset of your recent public commits, with full diffs, so that content (posts, threads, write-ups) can be drafted from what you actually shipped.
+shipnote turns the work you ship into posts. It starts with a nightly GitHub Action that builds a dataset of your recent public commits, with full diffs. A drafting CLI, planned next, will use that dataset to write tweets and blog posts that a human approves before anything is published.
 
-This repo is a template. Fork it, set two settings, and the same job runs against your own account.
+This repo is a template. Fork it, set two settings, and the nightly dataset job runs against your own account.
 
 ## How it works
 
@@ -73,7 +73,7 @@ scripts/export-commits.sh               discovery, clone, export
 
 ## Roadmap
 
-- Draft tweets and blog posts from the dataset, with each claim tied to a commit SHA. The design is in [docs/PRD.md](docs/PRD.md); agent and model settings are in [shipnote.example.toml](shipnote.example.toml).
+- `shipnote draft`: draft tweets and blog posts from the dataset, with each claim tied to a commit SHA. Agent and model settings live in [shipnote.example.toml](shipnote.example.toml).
 - Store per-day change summaries in agent-brain and pull them back as context during drafting.
 - Approval step before anything is published.
 

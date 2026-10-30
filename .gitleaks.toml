@@ -1,4 +1,4 @@
-title = "social-pipeline dataset scan"
+title = "shipnote dataset scan"
 
 [extend]
 useDefault = true

@@ -1,4 +1,4 @@
-name: nightly-dataset
+name: shipnote nightly dataset
 
 on:
   schedule:
