@@ -1,0 +1,175 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>shipnote: Turn what you ship into posts you approve</title>
+  <meta name="description" content="shipnote turns the work you ship into tweets and blog drafts. Every claim is tied to a commit, and nothing publishes without your approval.">
+  <link rel="icon" href="logo.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #000000;
+      --surface: #0a0a0a;
+      --border: #262626;
+      --text: #ffffff;
+      --muted: #a1a1aa;
+      --accent: #38bdf8;
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; background: var(--bg); color: var(--text); }
+    body {
+      font-family: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+    }
+    a { color: inherit; }
+    .wrap { max-width: 1040px; margin: 0 auto; padding: 0 1.25rem; }
+
+    header { border-bottom: 1px solid var(--border); }
+    header .wrap { display: flex; align-items: center; justify-content: space-between; height: 64px; }
+    .brand { display: flex; align-items: center; gap: 0.6rem; font-weight: 600; text-decoration: none; }
+    .brand img { width: 28px; height: 28px; }
+    nav a { color: var(--muted); text-decoration: none; font-size: 0.9rem; margin-left: 1.5rem; }
+    nav a:hover { color: var(--text); }
+
+    .hero { padding: 6rem 0 5rem; text-align: center; }
+    .hero h1 {
+      font-size: clamp(2.5rem, 6vw, 4rem);
+      line-height: 1.08;
+      letter-spacing: -0.03em;
+      margin: 0 0 1.25rem;
+      font-weight: 600;
+    }
+    .hero p { color: var(--muted); font-size: 1.15rem; max-width: 36rem; margin: 0 auto 2.5rem; }
+    .actions { display: flex; gap: 0.75rem; justify-content: center; flex-wrap: wrap; }
+    .btn {
+      display: inline-block; padding: 0.7rem 1.25rem; border-radius: 8px;
+      font-size: 0.95rem; font-weight: 500; text-decoration: none; border: 1px solid var(--border);
+    }
+    .btn-primary { background: var(--text); color: var(--bg); border-color: var(--text); }
+    .btn-ghost { color: var(--text); }
+    .btn-ghost:hover, .btn-primary:hover { opacity: 0.85; }
+
+    section { padding: 4.5rem 0; border-top: 1px solid var(--border); }
+    section h2 { font-size: 1.75rem; letter-spacing: -0.02em; margin: 0 0 2rem; font-weight: 600; }
+
+    .steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; counter-reset: step; list-style: none; padding: 0; margin: 0; }
+    .steps li {
+      counter-increment: step; background: var(--surface); border: 1px solid var(--border);
+      border-radius: 12px; padding: 1.5rem;
+    }
+    .steps li::before {
+      content: counter(step); display: inline-flex; align-items: center; justify-content: center;
+      width: 28px; height: 28px; border-radius: 50%; border: 1px solid var(--border);
+      color: var(--accent); font-size: 0.85rem; margin-bottom: 1rem;
+    }
+    .steps h3, .cards h3 { font-size: 1.05rem; margin: 0 0 0.4rem; font-weight: 600; }
+    .steps p, .cards p { color: var(--muted); font-size: 0.95rem; margin: 0; }
+
+    .cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; }
+    .cards > div { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 1.5rem; }
+
+    pre {
+      background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
+      padding: 1.25rem; overflow-x: auto; color: var(--muted); font-size: 0.88rem;
+    }
+    code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+
+    footer { border-top: 1px solid var(--border); padding: 2rem 0; color: var(--muted); font-size: 0.9rem; }
+    footer .wrap { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 1rem; }
+    footer a { text-decoration: none; }
+    footer a:hover { color: var(--text); }
+
+    @media (max-width: 760px) {
+      .steps, .cards { grid-template-columns: 1fr; }
+      .hero { padding: 4rem 0 3.5rem; }
+      nav a { margin-left: 1rem; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="wrap">
+      <a class="brand" href="#top"><img src="logo.svg" alt="" width="28" height="28"> shipnote</a>
+      <nav>
+        <a href="#how">How it works</a>
+        <a href="#setup">Setup</a>
+        <a href="https://github.com/abhiudayg/shipnote">GitHub</a>
+      </nav>
+    </div>
+  </header>
+
+  <main id="top">
+    <div class="wrap hero">
+      <h1>Turn what you ship into posts you approve.</h1>
+      <p>shipnote reads your public commits each night and drafts tweets and blog posts from them. Every claim is tied to a commit, and nothing goes out until you approve it.</p>
+      <div class="actions">
+        <a class="btn btn-primary" href="https://github.com/abhiudayg/shipnote">View on GitHub</a>
+        <a class="btn btn-ghost" href="#setup">Read the setup guide</a>
+      </div>
+    </div>
+
+    <section id="how">
+      <div class="wrap">
+        <h2>How it works</h2>
+        <ol class="steps">
+          <li>
+            <h3>Nightly dataset</h3>
+            <p>A GitHub Action collects your public commits and diffs from the last 30 days.</p>
+          </li>
+          <li>
+            <h3>Grounded drafts</h3>
+            <p>Each draft cites the commit SHAs it is based on. Claims without a matching commit are dropped.</p>
+          </li>
+          <li>
+            <h3>You approve</h3>
+            <p>You review each draft with its evidence and decide what gets posted.</p>
+          </li>
+        </ol>
+      </div>
+    </section>
+
+    <section>
+      <div class="wrap">
+        <h2>Built to stay honest</h2>
+        <div class="cards">
+          <div>
+            <h3>Every claim traced</h3>
+            <p>Each factual statement links to the commit and file it came from.</p>
+          </div>
+          <div>
+            <h3>Nothing publishes itself</h3>
+            <p>shipnote drafts. You approve and post. There is no auto-posting.</p>
+          </div>
+          <div>
+            <h3>Fork and run it</h3>
+            <p>The nightly job runs on your own GitHub account with two settings.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="setup">
+      <div class="wrap">
+        <h2>Setup</h2>
+        <pre><code>1. Fork github.com/abhiudayg/shipnote
+2. Enable Actions in your fork
+3. Set the repository variable DATASET_AUTHOR to your git name
+4. Run the nightly-dataset workflow once with days = 30</code></pre>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <div class="wrap">
+      <span>shipnote</span>
+      <span>
+        <a href="https://github.com/abhiudayg/shipnote">GitHub</a>
+      </span>
+    </div>
+  </footer>
+</body>
+</html>
