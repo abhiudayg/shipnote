@@ -4,6 +4,7 @@ import Docs from '../layouts/Docs.astro';
 const milestones = [
   { id: 'M0', title: 'Evaluation set', status: 'Planned', body: 'Build 10 to 20 past commit clusters with the post each should have produced. No prompt tuning happens before this exists.' },
   { id: 'M1', title: 'Fetch and select', status: 'Done', body: 'Download and archive the dataset, drop used and trivial commits, and rank the rest. Dry-run output only.' },
+  { id: 'M1b', title: 'Memory from agent-brain', status: 'In progress', body: 'Voice facts are read through agent-brain recall. agent-brain 1.0.0-rc6 adds remember and import-corpus for writing and importing posts, so repeat checks can build on them.' },
   { id: 'M2', title: 'Story drafts for tweets', status: 'Planned', body: 'Draft tweets from one story, with SHA-checked claims, sources, and hook visuals taken from the diff.' },
   { id: 'M3', title: 'Blog drafts and theme mode', status: 'Planned', body: 'Blog posts in story and theme modes, agent-brain retrieval, and quality checks for theme posts.' },
   { id: 'M4', title: 'Review and approve', status: 'Planned', body: 'A fast daily review command, approve and mark-used steps, and two weeks of daily use before anything changes.' },

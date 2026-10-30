@@ -9,11 +9,19 @@ const modules = [
   { stage: 'Review', status: 'Planned', title: 'You approve', body: 'Each draft sits beside its evidence. You approve, edit, or reject. Nothing posts automatically.' },
 ];
 
-const bento = [
+const features = [
   { title: 'Every claim traced to a commit', body: 'Each factual statement links to the commit and file it came from. Validation runs before you see a draft.', badge: 'SHA validation · planned', size: 'md:col-span-2' },
   { title: 'No auto-posting', body: 'shipnote has no posting code. Drafts are files, and you decide what happens next.', badge: 'By design', size: '' },
   { title: 'Runs on your account', body: 'The nightly job reads the account from the repository owner. A fork needs two settings and one run.', badge: 'Fork and run', size: '' },
   { title: 'Secrets scanned before upload', body: 'Gitleaks, pinned to a version, scans the dataset. A finding fails the run before anything is uploaded.', badge: 'Working', size: 'md:col-span-2' },
+  { title: 'Your voice, not a generic one', body: 'Drafts are checked against your past posts, stored as facts in agent-brain, so the tone matches how you already write.', badge: 'Planned', size: '' },
+  { title: 'Repeat checks', body: 'A draft about a commit you already posted about gets flagged before it reaches review.', badge: 'Planned', size: '' },
+];
+
+const steps = [
+  { id: '01', title: 'Export', body: 'A scheduled GitHub Action exports your public commits and full diffs, scans them for secrets, and uploads a short-lived artifact.', code: 'cron: nightly · days: 30' },
+  { id: '02', title: 'Select', body: 'Used and trivial commits drop out. The rest are ranked by how much changed and how clear the message is.', code: 'bun cli/shipnote.ts select' },
+  { id: '03', title: 'Approve', body: 'Drafts will land as files beside their evidence, so you review, edit, and approve each one. Drafting and approval are the next milestones.', code: 'status: planned (M2 to M4)' },
 ];
 ---
 
@@ -71,13 +79,13 @@ const bento = [
       </div>
     </section>
 
-    <section class="px-5 py-24">
+    <section class="px-5 py-24" id="features">
       <div class="mx-auto max-w-6xl">
-        <p class="font-mono text-xs tracking-wider text-sky-400 uppercase">Capabilities</p>
+        <p class="font-mono text-xs tracking-wider text-sky-400 uppercase">Features</p>
         <h2 class="mt-3 text-3xl font-semibold tracking-[-0.03em] md:text-4xl">Built for technical integrity</h2>
         <p class="mt-3 max-w-xl text-zinc-400">Written for developers who care about accuracy, their own data, and getting credit correctly.</p>
         <div class="mt-12 grid gap-4 md:grid-cols-3">
-          {bento.map((item) => (
+          {features.map((item) => (
             <article class:list={['gradient-border rounded-2xl p-7 transition-transform duration-300 hover:-translate-y-0.5', item.size]}>
               <h3 class="text-lg font-semibold tracking-tight">{item.title}</h3>
               <p class="mt-3 text-sm leading-6 text-zinc-400">{item.body}</p>
@@ -88,7 +96,35 @@ const bento = [
       </div>
     </section>
 
-    <section class="px-5 py-24">
+    <section class="px-5 py-24" id="how-it-works">
+      <div class="mx-auto max-w-6xl">
+        <p class="font-mono text-xs tracking-wider text-sky-400 uppercase">How it works</p>
+        <h2 class="mt-3 text-3xl font-semibold tracking-[-0.03em] md:text-4xl">From commit to a post you approved</h2>
+        <div class="mt-12 grid gap-4 md:grid-cols-3">
+          {steps.map((s) => (
+            <div class="rounded-2xl border border-white/[0.08] bg-[#0a0a0c] p-7">
+              <span class="font-mono text-sm text-sky-400">{s.id}</span>
+              <h3 class="mt-4 text-lg font-semibold tracking-tight">{s.title}</h3>
+              <p class="mt-3 text-sm leading-6 text-zinc-400">{s.body}</p>
+              <p class="mt-6 rounded-md border border-white/[0.08] bg-black/60 px-3 py-2 font-mono text-[12px] text-zinc-300">{s.code}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+
+    <section class="px-5 pb-24">
+      <div class="mx-auto flex max-w-6xl flex-col items-start justify-between gap-6 rounded-2xl border border-white/[0.08] bg-[#0a0a0c] p-8 md:flex-row md:items-center md:p-10">
+        <div>
+          <p class="font-mono text-xs tracking-wider text-sky-400 uppercase">Privacy</p>
+          <h2 class="mt-3 text-2xl font-semibold tracking-[-0.02em]">Local-first. No telemetry. Nothing posts automatically.</h2>
+          <p class="mt-3 max-w-2xl text-sm leading-6 text-zinc-400">Code diffs and keys stay in your own runners or on your machine. shipnote has no posting code, so every publish is a step you take yourself.</p>
+        </div>
+        <a href="/privacy/" class="shrink-0 rounded-lg border border-white/[0.12] bg-white/[0.03] px-5 py-2.5 text-sm font-medium transition-colors hover:border-white/[0.25]">Read the privacy notes</a>
+      </div>
+    </section>
+
+    <section class="px-5 py-24" id="get-started">
       <div class="gradient-border mx-auto max-w-4xl rounded-3xl p-10 text-center md:p-14">
         <p class="font-mono text-xs tracking-wider text-sky-400 uppercase">Get started</p>
         <h2 class="mt-3 text-3xl font-semibold tracking-[-0.03em] md:text-4xl">Run it on your own account</h2>
