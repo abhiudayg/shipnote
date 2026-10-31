@@ -20,7 +20,7 @@ const features = [
 
 const steps = [
   { id: '01', title: 'Export', body: 'A scheduled GitHub Action exports your public commits and full diffs, scans them for secrets, and uploads a short-lived artifact.', code: 'cron: nightly · days: 30' },
-  { id: '02', title: 'Select', body: 'Used and trivial commits drop out. The rest are ranked by how much changed and how clear the message is.', code: 'bun cli/shipnote.ts select' },
+  { id: '02', title: 'Select', body: 'Used and trivial commits drop out. The rest are ranked by how much changed and how clear the message is.', code: 'shipnote select' },
   { id: '03', title: 'Approve', body: 'Drafts land as files beside their evidence. review --decide steps through them with one key, and approve records the choice. Nothing is posted.', code: 'status: working (M4)' },
 ];
 ---

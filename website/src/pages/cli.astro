@@ -26,13 +26,13 @@ shipnote --version</code></pre>
 
   <h2 class="mt-12 text-2xl font-semibold tracking-tight">fetch</h2>
   <p class="mt-3 leading-7 text-zinc-400">Downloads the newest successful nightly run, or the run you name, into <code class="font-mono text-zinc-200">archive/&lt;date&gt;/</code>. If that date is already archived, it does nothing.</p>
-  <pre class={code}><code>bun cli/shipnote.ts fetch
-bun cli/shipnote.ts fetch --date 2026-10-30 --run 41067258484</code></pre>
+  <pre class={code}><code>shipnote fetch
+shipnote fetch --date 2026-10-30 --run 41067258484</code></pre>
 
   <h2 class="mt-12 text-2xl font-semibold tracking-tight">select</h2>
   <p class="mt-3 leading-7 text-zinc-400">Reads the archive for a date and prints the commits ranked by score. Merges, lockfile-only changes, commits in <code class="font-mono text-zinc-200">ledger.json</code>, and denylisted repos are skipped, and each skip reason is counted.</p>
-  <pre class={code}><code>bun cli/shipnote.ts select
-bun cli/shipnote.ts select --date 2026-10-30</code></pre>
+  <pre class={code}><code>shipnote select
+shipnote select --date 2026-10-30</code></pre>
 
   <h2 class="mt-12 text-2xl font-semibold tracking-tight">Settings</h2>
   <div class="mt-4 overflow-hidden rounded-xl border border-white/[0.08] bg-black/40">
@@ -58,34 +58,34 @@ bun cli/shipnote.ts select --date 2026-10-30</code></pre>
 
   <h2 class="mt-12 text-2xl font-semibold tracking-tight">draft</h2>
   <p class="mt-3 leading-7 text-zinc-400">Drafts tweets and a blog post from the selected commits for a date, into <code class="font-mono text-zinc-200">drafts/&lt;date&gt;/</code>. Every claim is checked against the commits it cites. A draft that names a file, identifier, or number missing from those commits is removed, and so is one that repeats an approved post from the last 30 days. If the run fails, <code class="font-mono text-zinc-200">review.md</code> says why and no drafts are written. The tweets are printed when the run finishes, without their links. The commit links go under Reply with, since links in the main post reduce reach.</p>
-  <pre class={code}><code>bun cli/shipnote.ts draft
-bun cli/shipnote.ts draft --date 2026-10-30 --top 3</code></pre>
+  <pre class={code}><code>shipnote draft
+shipnote draft --date 2026-10-30 --top 3</code></pre>
 
   <h2 class="mt-12 text-2xl font-semibold tracking-tight">review</h2>
   <p class="mt-3 leading-7 text-zinc-400">Shows each draft beside its evidence, with its approval state and any rejections. Add <code class="font-mono text-zinc-200">--decide</code> to step through drafts one key at a time: <code class="font-mono text-zinc-200">a</code> approves, <code class="font-mono text-zinc-200">r</code> rejects, <code class="font-mono text-zinc-200">e</code> opens the draft in <code class="font-mono text-zinc-200">$EDITOR</code>, <code class="font-mono text-zinc-200">s</code> skips, and <code class="font-mono text-zinc-200">q</code> quits. It needs an interactive terminal.</p>
-  <pre class={code}><code>bun cli/shipnote.ts review --date 2026-10-30
-bun cli/shipnote.ts review --decide --date 2026-10-30</code></pre>
+  <pre class={code}><code>shipnote review --date 2026-10-30
+shipnote review --decide --date 2026-10-30</code></pre>
 
   <h2 class="mt-12 text-2xl font-semibold tracking-tight">approve, mark-used, and status</h2>
   <p class="mt-3 leading-7 text-zinc-400"><code class="font-mono text-zinc-200">approve</code> marks one draft as approved, and posts nothing. <code class="font-mono text-zinc-200">mark-used</code> adds full commit SHAs to <code class="font-mono text-zinc-200">ledger.json</code>, so <code class="font-mono text-zinc-200">select</code> skips them later. <code class="font-mono text-zinc-200">status</code> lists a date's drafts and approvals.</p>
-  <pre class={code}><code>bun cli/shipnote.ts approve tweet-1 --date 2026-10-30
-bun cli/shipnote.ts mark-used &lt;40-character SHA&gt;
-bun cli/shipnote.ts status --date 2026-10-30</code></pre>
+  <pre class={code}><code>shipnote approve tweet-1 --date 2026-10-30
+shipnote mark-used &lt;40-character SHA&gt;
+shipnote status --date 2026-10-30</code></pre>
 
   <h2 class="mt-12 text-2xl font-semibold tracking-tight">stats</h2>
   <p class="mt-3 leading-7 text-zinc-400">Reports the approval rate across every draft day, so you can see whether a change to the prompt or model helped.</p>
-  <pre class={code}><code>bun cli/shipnote.ts stats</code></pre>
+  <pre class={code}><code>shipnote stats</code></pre>
 
   <h2 class="mt-12 text-2xl font-semibold tracking-tight">remember and import-voice</h2>
   <p class="mt-3 leading-7 text-zinc-400"><code class="font-mono text-zinc-200">remember</code> stores one voice fact in agent-brain, tagged with <code class="font-mono text-zinc-200">voice_tag</code> unless you pass <code class="font-mono text-zinc-200">--tag</code>. Text that matches a secret pattern is refused. <code class="font-mono text-zinc-200">import-voice</code> stores each paragraph of <code class="font-mono text-zinc-200">voice/</code>, or another folder you name. Paragraphs already stored are skipped.</p>
-  <pre class={code}><code>bun cli/shipnote.ts remember "I write short sentences about what shipped."
-bun cli/shipnote.ts import-voice</code></pre>
+  <pre class={code}><code>shipnote remember "I write short sentences about what shipped."
+shipnote import-voice</code></pre>
 
   <h2 class="mt-12 text-2xl font-semibold tracking-tight">media and eval</h2>
   <p class="mt-3 leading-7 text-zinc-400"><code class="font-mono text-zinc-200">media</code> renders the first clean diff excerpt from the top commits as SVG cards, and refuses any excerpt that does not match its diff. <code class="font-mono text-zinc-200">eval-add</code> saves a commit case, and <code class="font-mono text-zinc-200">eval</code> runs every saved case through the agent and reports mode match, parse, SHA validity, and validation rates.</p>
-  <pre class={code}><code>bun cli/shipnote.ts media --date 2026-10-30
-bun cli/shipnote.ts eval-add retry --date 2026-10-30 --sha 1111 --expect story --notes "retry commit"
-bun cli/shipnote.ts eval</code></pre>
+  <pre class={code}><code>shipnote media --date 2026-10-30
+shipnote eval-add retry --date 2026-10-30 --sha 1111 --expect story --notes "retry commit"
+shipnote eval</code></pre>
 
   <h2 class="mt-12 text-2xl font-semibold tracking-tight">Configuration</h2>
   <p class="mt-3 leading-7 text-zinc-400">The agent, budget, and selection settings are read from <code class="font-mono text-zinc-200">shipnote.toml</code>. Copy <code class="font-mono text-zinc-200">shipnote.example.toml</code> to start. The budget table sets the token and cost limits per run, the retry count, and <code class="font-mono text-zinc-200">timeout_seconds</code> for each agent call.</p>
