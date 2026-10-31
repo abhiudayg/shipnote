@@ -3,7 +3,7 @@ import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { approve, draftIds, readApproved, writeApproved } from "./approval";
-import { mergeLedger, readLedger, validateShas, writeLedger } from "./ledger";
+import { mergeLedger, readLedger, releaseShas, validateShas, writeLedger } from "./ledger";
 
 const sha = "a".repeat(40);
 const otherSha = "b".repeat(40);
@@ -85,5 +85,15 @@ describe("approved file", () => {
 
   test("a missing approved file is empty", () => {
     expect(readApproved(join(root, "approved.json"))).toEqual([]);
+  });
+});
+
+describe("releaseShas", () => {
+  test("drops released commits that no approved draft still uses", () => {
+    expect(releaseShas(["a", "b", "c"], ["a", "b"], ["b"])).toEqual(["b", "c"]);
+  });
+
+  test("keeps every commit when nothing was released", () => {
+    expect(releaseShas(["a", "b"], [], [])).toEqual(["a", "b"]);
   });
 });

@@ -1,5 +1,19 @@
 import { describe, expect, test } from "bun:test";
-import { approve, decisionFor, unapprove } from "./approval";
+import { approve, claimShas, decisionFor, unapprove } from "./approval";
+
+describe("claimShas", () => {
+  test("returns the commits behind one draft id", () => {
+    const claims = [
+      { item: "tweet 1", commits: [{ sha: "a" }] },
+      { item: "blog", commits: [{ sha: "b" }, { sha: "c" }] },
+    ];
+    expect(claimShas(claims, "blog")).toEqual(["b", "c"]);
+  });
+
+  test("returns nothing for an unknown draft id", () => {
+    expect(claimShas([{ item: "tweet 1", commits: [{ sha: "a" }] }], "tweet-9")).toEqual([]);
+  });
+});
 
 describe("unapprove", () => {
   test("removes an approved draft id", () => {

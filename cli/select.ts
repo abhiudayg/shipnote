@@ -35,6 +35,30 @@ export function score(commit: Commit): number {
   return Number((0.6 * size + 0.2 * newFiles + 0.2 * quality).toFixed(3));
 }
 
+export function topicKey(repo: string, files: string[]): string {
+  const counts = new Map<string, number>();
+  for (const file of files) {
+    const area = file.split("/")[0];
+    counts.set(area, (counts.get(area) ?? 0) + 1);
+  }
+  const [area] = [...counts].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))[0] ?? [""];
+  return `${repo}/${area}`;
+}
+
+export function topicOf(commit: Commit): string {
+  return topicKey(commit.repo, commit.files);
+}
+
+export function representatives<T extends Commit>(ranked: T[]): T[] {
+  const seen = new Set<string>();
+  return ranked.filter((commit) => {
+    const topic = topicOf(commit);
+    if (seen.has(topic)) return false;
+    seen.add(topic);
+    return true;
+  });
+}
+
 export function select(commits: Commit[], rules: Rules): Selection {
   const selected: Selection["selected"] = [];
   const skipped: Skip[] = [];

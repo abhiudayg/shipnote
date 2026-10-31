@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import { readFileSync } from "node:fs";
 import { parsePatch } from "./patch";
-import { type Rules, score, select } from "./select";
+import { type Rules, representatives, score, select, topicKey, topicOf } from "./select";
 
 const sample = parsePatch(readFileSync(new URL("./fixtures/sample.patch", import.meta.url), "utf8"), "abhiudayg/dustmap");
 const retrySha = "1111111111111111111111111111111111111111";
@@ -73,5 +73,40 @@ describe("select", () => {
     const [only] = select(sample, rules()).selected;
     expect(only.score).toBeGreaterThan(0);
     expect(only.score).toBeLessThanOrEqual(1);
+  });
+});
+
+describe("representatives", () => {
+  const base = { sha: "", repo: "o/r", date: "", subject: "", body: "", files: [] as string[], newFiles: 0, added: 0, removed: 0, diff: "" };
+  const commit = (sha: string, repo: string, file: string) => ({ ...base, sha: sha.repeat(40), repo, files: [file] });
+
+  test("keeps the highest-scoring commit for each topic", () => {
+    const ranked = [commit("a", "o/r", "cli/x.ts"), commit("b", "o/r", "cli/y.ts"), commit("c", "o/r", "docs/z.md")];
+    expect(representatives(ranked).map((item) => item.sha)).toEqual(["a".repeat(40), "c".repeat(40)]);
+  });
+
+  test("treats the same top-level folder in different repos as different topics", () => {
+    const ranked = [commit("a", "o/one", "cli/x.ts"), commit("b", "o/two", "cli/y.ts")];
+    expect(representatives(ranked)).toHaveLength(2);
+  });
+
+  test("names a topic by repo and top-level folder", () => {
+    expect(topicOf(commit("a", "o/r", "cli/x.ts"))).toBe("o/r/cli");
+  });
+});
+
+describe("topicKey", () => {
+  test("matches the topic a commit is grouped under", () => {
+    expect(topicKey("o/r", ["cli/x.ts"])).toBe("o/r/cli");
+  });
+});
+
+describe("topicKey area", () => {
+  test("uses the folder that most of the commit's files are in", () => {
+    expect(topicKey("o/r", [".github/ci.yml", "internal/a.go", "internal/b.go"])).toBe("o/r/internal");
+  });
+
+  test("breaks ties by folder name", () => {
+    expect(topicKey("o/r", ["b/x.go", "a/y.go"])).toBe("o/r/a");
   });
 });

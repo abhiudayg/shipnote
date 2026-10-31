@@ -13,7 +13,7 @@ cp cli/fixtures/sample.patch "$WORK/archive/2026-10-31/abhiudayg/dustmap.patch"
 
 cat > "$WORK/fake-agent.ts" <<EOF
 const body = Array.from({ length: 650 }, () => "word").join(" ");
-const text = process.env.FAKE_AGENT === "hostile" ? "\`makeTea()\` now runs first." : "Retries now run three times.";
+const text = process.env.FAKE_AGENT === "hostile" ? "\`makeTea()\` now runs first." : "Retries now run 3 times.";
 console.log(JSON.stringify({ tweets: [{ text, shas: ["$SHA"] }], blog: { title: "Retry", summary: "Retries now back off.", body, shas: ["$SHA"] } }));
 EOF
 

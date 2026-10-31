@@ -11,7 +11,7 @@ describe("evaluateCase", () => {
   test("counts a valid tweet as kept and a fabricated SHA as rejected", async () => {
     const raw = JSON.stringify({
       tweets: [
-        { text: "Retries now run three times.", shas: [retrySha] },
+        { text: "Retries now run 3 times.", shas: [retrySha] },
         { text: "Made up.", shas: ["9".repeat(40)] },
       ],
       blog: null,

@@ -12,6 +12,12 @@ export function mergeLedger(ledger: string[], shas: string[]): string[] {
   return [...new Set([...ledger, ...shas])].sort();
 }
 
+export function releaseShas(ledger: string[], released: string[], stillApproved: string[]): string[] {
+  const kept = new Set(stillApproved);
+  const dropped = new Set(released.filter((sha) => !kept.has(sha)));
+  return ledger.filter((sha) => !dropped.has(sha));
+}
+
 export function readLedger(path: string): string[] {
   if (!existsSync(path)) return [];
   const value: unknown = JSON.parse(readFileSync(path, "utf8"));
