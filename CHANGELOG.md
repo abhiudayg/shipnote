@@ -6,6 +6,10 @@ Each release's notes are taken from its section below, so write entries for what
 
 ## [Unreleased]
 
+### Added
+
+- `shipnote update` installs the latest version from npm. `shipnote update --check` only reports whether a newer version exists.
+
 ### Changed
 
 - Each tweet opens with a hook in its first sentence: a result, a number from the diff, or a question.
