@@ -6,6 +6,10 @@ Each release's notes are taken from its section below, so write entries for what
 
 ## [Unreleased]
 
+### Added
+
+- `shipnote update` installs the latest version from npm. `shipnote update --check` only reports whether a newer version exists.
+
 ## [0.3.0] - 2026-10-31
 
 ### Added

@@ -26,6 +26,7 @@ A user runs `shipnote` the way they run `docker`: help at every level, one globa
 - CLI: `shipnote --help` and `shipnote COMMAND --help`.
 - CLI: any command with `-v` or `--verbose`, for example `shipnote select --date 2026-10-31 -v`.
 - CLI: `shipnote --version` prints the package version.
+- CLI: `shipnote update` installs the latest version from npm, and `shipnote update --check` only reports whether one exists.
 
 ## Verification Suites (Targeted Test Commands)
 
@@ -51,3 +52,4 @@ Steps:
 - `cli/log.ts`
 - `cli/progress.ts`, `cli/progress.test.ts`
 - `cli/shipnote.ts` (shared entry point; this feature owns the command table, help dispatch, verbose setup, and `callAgent` spin-down)
+- `cli/update.ts`, `cli/update.test.ts`

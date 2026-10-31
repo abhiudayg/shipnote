@@ -20,6 +20,7 @@ import { select, type Rules } from "./select";
 import { withProgress } from "./progress";
 import { commandHelp, type CommandSpec, rootHelp } from "./help";
 import { debug, setVerbose } from "./log";
+import { update } from "./update";
 import pkg from "../package.json" with { type: "json" };
 
 const ARCHIVE = "archive";
@@ -675,6 +676,12 @@ const COMMANDS: Record<string, CommandSpec & { run: (args: string[]) => Promise<
       ["--notes TEXT", "What a good post should say"],
     ],
     run: evalAdd,
+  },
+  update: {
+    summary: "Install the latest shipnote from npm, or check for it",
+    usage: "update [--check]",
+    options: [["--check", "Only report whether a newer version exists"]],
+    run: async (args) => console.log(await update(pkg.version, args.includes("--check"))),
   },
   eval: {
     summary: "Run the saved eval cases through the agent",
