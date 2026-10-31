@@ -35,6 +35,12 @@ Each release's notes are taken from its section below, so write entries for what
 - A run that fails writes `review.md` with the reason and writes no drafts. Earlier drafts and approvals are kept.
 - Vercel builds the website from the repository root through `vercel.json`.
 
+## [0.1.1] - 2026-10-31
+
+### Fixed
+
+- The README logo uses an absolute URL, so it shows on the GitHub Packages and npm pages.
+
 ## [0.1.0] - 2026-10-30
 
 ### Added
