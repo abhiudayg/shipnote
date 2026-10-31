@@ -10,5 +10,5 @@ regexes = [
   '''r"-----BEGIN \(RSA \|EC \)\?PRIVATE KEY-----"''',
   '''r"\(\?i\)\(api\[_-\]\?key\|secret\|password\|token\)''',
   '''^secret12345678901234567890$''',
-  '''^sk-live-123456$''',
+  '''^sk-live-[0-9]{1,12}$''',
 ]
