@@ -31,7 +31,7 @@ function tweetsMarkdown(result: Checked, commits: Commit[], date: string): strin
   const sections = result.draft.tweets.map((tweet, index) => {
     const links = tweet.shas.map((sha) => {
       const commit = byHash.get(sha);
-      return commit ? commitUrl(commit.repo, sha) : sha;
+      return commit ? (commitUrl(commit.repo, sha) ?? commit.files.join(", ")) : sha;
     });
     return [`## Tweet ${index + 1}`, "", tweet.text, "", "Reply with:", ...links].join("\n");
   });

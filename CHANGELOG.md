@@ -8,6 +8,7 @@ Each release's notes are taken from its section below, so write entries for what
 
 ### Added
 
+- `shipnote import-docs <dir>` imports a folder of markdown files as drafting sources, so a day with no commits can still produce posts. Documents get no GitHub link.
 - `shipnote update` installs the latest version from npm. `shipnote update --check` only reports whether a newer version exists.
 
 ### Changed

@@ -8,6 +8,10 @@ shipnote reads a dated archive of exported commits, skips commits that should no
   - Intent: let a user without a fork supply their own commits.
   - Behaviour: copies each patch file, and skips a date that is already archived.
   - Outcome: the archive directory holds the patches for `select`.
+- `document-import`: Copies a folder of markdown files into `archive/<date>/docs/` as drafting sources.
+  - Intent: let a user draft from notes and docs when they have no commits to write about.
+  - Behaviour: writes each `.md` file as one entry with a stable id from its path, its first `# ` heading as the subject, and its text as the diff. No GitHub link is made for a document.
+  - Outcome: `select` and `draft` read the documents like commits, and the reply lines show the file path.
 - `skip-rules`: Drops merges, lockfile-only changes, used commits, and denylisted repositories.
   - Intent: keep posts about work that is new and worth a post.
   - Behaviour: applies each rule in order and records the first reason that matches.
@@ -21,6 +25,7 @@ shipnote reads a dated archive of exported commits, skips commits that should no
 
 - CLI: `shipnote fetch --date 2026-10-31` downloads the nightly dataset, and needs `SHIPNOTE_REPO` and gh.
 - CLI: `shipnote import ./export --date 2026-10-31` imports patches from a local folder.
+- CLI: `shipnote import-docs ./notes --date 2026-10-31` imports a folder of markdown documents.
 - CLI: `shipnote select --date 2026-10-31` prints the ranked commits.
 
 ## Verification Suites (Targeted Test Commands)
@@ -47,6 +52,7 @@ Steps:
 - `cli/ledger.ts`, `cli/ledger.test.ts`
 - `cli/select.ts`, `cli/select.test.ts`
 - `cli/patch.ts`
+- `cli/docs.ts`, `cli/docs.test.ts`
 - `cli/fixtures/sample.patch`
 - `scripts/export-commits.sh`
 - `cli/shipnote.ts` (shared entry point; this feature owns the `fetch`, `import`, and `select` commands)
