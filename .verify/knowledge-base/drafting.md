@@ -2,7 +2,7 @@
 
 ## Decisions
 - The model must return JSON, and each item lists the full SHA of every commit it uses. Code, not the model, decides which items are kept.
-- Grounding checks identifiers, file names, and numbers of two or more digits against the cited commits. Prose claims are not checked, because a reliable check would need a second model call.
+- Grounding checks identifiers, file names, and numbers of two or more digits against the cited commits. Tweet prose gets a word-overlap check: more than 40% of its content words missing from the cited commits drops the tweet. It is a heuristic, and it does not check blog prose.
 - Repeat detection uses word overlap against approved posts from the previous 30 days. Drafts never write to memory.
 - A run that fails writes `review.md` and no drafts, and keeps earlier drafts and approvals. An earlier version deleted `sources.json` on a failed rerun, which broke repeat checks.
 

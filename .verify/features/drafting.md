@@ -45,7 +45,7 @@ Steps:
 
 ## Gotchas
 
-- Grounding checks identifiers, file names, and numbers. It does not check prose claims. A claim such as "brings scoped auth" passes when its commit is cited, even if the diff does not show it.
+- Grounding checks identifiers, file names, and numbers. Prose is checked by a word-overlap heuristic: a tweet is dropped when more than 40% of its content words (five letters or more, generic marketing words excluded) are absent from the cited commits. It cannot tell a true paraphrase from a false claim that reuses commit vocabulary. Blogs are not checked for prose.
 - Repeat detection is word overlap, not embeddings. The 0.6 threshold is not tuned on real posts.
 - Draft quality on a real model is measured only by `shipnote eval`, and the eval set has ten cases. Two of them are labeled theme and drafted as story.
 - The harness uses a fake agent. A change in prompt wording is not measured by the functional phase.
