@@ -17,7 +17,7 @@ jobs:
   export:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Export commits
         env:
@@ -28,10 +28,10 @@ jobs:
         run: scripts/export-commits.sh dataset
 
       - name: Scan dataset for secrets
-        run: docker run --rm -v "$PWD/dataset:/scan" -v "$PWD/.gitleaks.toml:/config.toml:ro" ghcr.io/gitleaks/gitleaks:v8.18.4 detect --no-git --source /scan --config /config.toml --exit-code 1
+        run: docker run --rm -v "$PWD/dataset:/scan" -v "$PWD/.gitleaks.toml:/config.toml:ro" ghcr.io/gitleaks/gitleaks:v8.18.4 detect --no-git --source /scan --config /config.toml --redact --exit-code 1
 
       - name: Upload dataset
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: dataset-${{ github.run_id }}
           path: dataset/
