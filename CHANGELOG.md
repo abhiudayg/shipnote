@@ -6,6 +6,8 @@ Each release's notes are taken from its section below, so write entries for what
 
 ## [Unreleased]
 
+## [0.3.2] - 2026-11-01
+
 ### Added
 
 - Approving a draft marks its commits as used, so they are not selected again. This applies to `approve` and to `review --decide`.
