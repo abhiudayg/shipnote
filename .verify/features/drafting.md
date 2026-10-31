@@ -61,3 +61,5 @@ Steps:
 - `cli/config.ts`, `cli/config.test.ts`
 - `shipnote.example.toml`
 - `cli/shipnote.ts` (shared entry point; this feature owns the `draft`, `eval`, and `eval-add` commands)
+- `cli/negative-controls.test.ts`
+- `cli/fixtures/negative-controls.json`

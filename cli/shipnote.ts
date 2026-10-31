@@ -17,6 +17,10 @@ import { parsePatch, type Commit } from "./patch";
 import { writeDrafts, writeFailure, type RunMeta } from "./output";
 import { REPEAT_WINDOW_DAYS, type RecentPost } from "./similarity";
 import { select, type Rules } from "./select";
+import { withProgress } from "./progress";
+import { commandHelp, type CommandSpec, rootHelp } from "./help";
+import { debug, setVerbose } from "./log";
+import pkg from "../package.json" with { type: "json" };
 
 const ARCHIVE = "archive";
 const DRAFTS = "drafts";
@@ -73,8 +77,9 @@ async function fetchDataset(args: string[]): Promise<void> {
   }
 
   const runId = flag(args, "--run") ?? (await latestRunId());
+  debug(`downloading run ${runId} into ${dir}`);
   try {
-    await Bun.$`gh run download ${runId} --repo ${repo} --dir ${dir}`.quiet();
+    await withProgress(`downloading run ${runId}`, () => Bun.$`gh run download ${runId} --repo ${repo} --dir ${dir}`.quiet());
   } catch (error) {
     rmSync(dir, { recursive: true, force: true });
     throw error;
@@ -84,12 +89,15 @@ async function fetchDataset(args: string[]): Promise<void> {
 
 async function loadCommits(dir: string): Promise<Commit[]> {
   if (!existsSync(dir)) throw new Error(`no archive for this date: ${dir}. Run "shipnote fetch" first.`);
-  const commits: Commit[] = [];
-  for await (const file of new Bun.Glob("**/*.patch").scan(dir)) {
-    const repoName = file.replace(/\.patch$/, "").split("/").slice(-2).join("/");
-    commits.push(...parsePatch(readFileSync(join(dir, file), "utf8"), repoName));
-  }
-  return commits;
+  return withProgress(`reading ${dir}`, async () => {
+    const commits: Commit[] = [];
+    for await (const file of new Bun.Glob("**/*.patch").scan(dir)) {
+      const repoName = file.replace(/\.patch$/, "").split("/").slice(-2).join("/");
+      commits.push(...parsePatch(readFileSync(join(dir, file), "utf8"), repoName));
+    }
+    debug(`read ${commits.length} commits from ${dir}`);
+    return commits;
+  });
 }
 
 const VALUE_FLAGS = ["--date", "--tag", "--source"];
@@ -158,18 +166,34 @@ async function selectCommits(args: string[]): Promise<void> {
   }
 }
 
+function stopAgentGroup(pid: number): void {
+  try {
+    process.kill(-pid, "SIGKILL");
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code !== "ESRCH") throw error;
+  }
+}
+
 async function callAgent(provider: Provider, prompt: string, timeoutSeconds: number): Promise<string> {
   const { argv, stdin } = agentCommand(provider, prompt);
   const proc = Bun.spawn(argv, {
     stdin: stdin === null ? "ignore" : new Blob([stdin]),
     stdout: "pipe",
     stderr: "pipe",
+    detached: true,
   });
+  debug(`agent ${provider.command} pid ${proc.pid}: prompt ${prompt.length} characters, timeout ${timeoutSeconds}s`);
   let timedOut = false;
+  const stop = () => stopAgentGroup(proc.pid);
+  const interrupt = () => {
+    stop();
+    process.exit(130);
+  };
   const timer = setTimeout(() => {
     timedOut = true;
-    proc.kill();
+    stop();
   }, timeoutSeconds * 1000);
+  process.once("SIGINT", interrupt);
   try {
     const [stdout, stderr, code] = await Promise.all([
       new Response(proc.stdout).text(),
@@ -181,6 +205,7 @@ async function callAgent(provider: Provider, prompt: string, timeoutSeconds: num
     return stdout;
   } finally {
     clearTimeout(timer);
+    process.removeListener("SIGINT", interrupt);
   }
 }
 
@@ -238,12 +263,14 @@ async function runEval(args: string[]): Promise<void> {
   }
 
   const results = [];
-  for (const evalCase of cases) {
-    const result = await evaluateCase(evalCase, config.minStoryScore, voice, async (prompt) => {
-      const refusal = checkBudget(estimateTokens(prompt), provider.usdPerMillionTokens, config.budget);
-      if (refusal) throw new Error(refusal);
-      return callWithRetries(provider, prompt, config.budget);
-    });
+  for (const [index, evalCase] of cases.entries()) {
+    const result = await withProgress(`eval ${index + 1}/${cases.length} ${evalCase.name}`, () =>
+      evaluateCase(evalCase, config.minStoryScore, voice, async (prompt) => {
+        const refusal = checkBudget(estimateTokens(prompt), provider.usdPerMillionTokens, config.budget);
+        if (refusal) throw new Error(refusal);
+        return callWithRetries(provider, prompt, config.budget);
+      }),
+    );
     results.push(result);
     console.log(`${result.name}: mode ${result.mode} (expected ${result.expectMode}), kept ${result.kept}/${result.produced}${result.error ? `, error: ${result.error}` : ""}`);
   }
@@ -476,6 +503,7 @@ async function draftPosts(args: string[]): Promise<void> {
   const { selected, skipped } = select(commits, currentRules(config));
   const mode = chooseMode(selected[0]?.score, config.minStoryScore);
   const chosen = mode === "story" ? selected.slice(0, top) : selected.slice(0, THEME_EXAMPLES);
+  debug(`mode ${mode}: drafting ${chosen.length} of ${selected.length} selected commits`);
   if (chosen.length === 0) {
     fail("No commits passed selection, so there is nothing to draft.");
     return;
@@ -494,7 +522,7 @@ async function draftPosts(args: string[]): Promise<void> {
 
   let raw: string;
   try {
-    raw = await callWithRetries(provider, prompt, config.budget);
+    raw = await withProgress(`drafting with ${provider.command} (${provider.model})`, () => callWithRetries(provider, prompt, config.budget));
   } catch (error) {
     fail(`The agent call failed: ${(error as Error).message}`, tokens, cost);
     return;
@@ -524,6 +552,7 @@ async function draftPosts(args: string[]): Promise<void> {
     meta: runMeta(tokens, cost),
   });
   console.log(`${date}: ${result.draft.tweets.length} tweet(s), blog ${result.draft.blog ? "yes" : "no"}; see ${dir}`);
+  console.log(readFileSync(join(dir, "tweets.md"), "utf8"));
 }
 
 async function importArchive(args: string[]): Promise<void> {
@@ -546,37 +575,143 @@ async function rememberFact(args: string[]): Promise<void> {
 
 async function importVoice(args: string[]): Promise<void> {
   const [dir = VOICE_DIR] = positionals(args);
-  const report = await importCorpus(runCommand, dir, loadConfig(CONFIG).voiceTag);
+  const report = await withProgress(`importing ${dir}`, () => importCorpus(runCommand, dir, loadConfig(CONFIG).voiceTag));
   const refused = report.rejected_secret + report.rejected_too_long;
   console.log(`read ${report.paragraphs} paragraph(s) from ${report.files} file(s): stored ${report.stored}, already stored ${report.deduplicated}, refused ${refused}`);
 }
 
-const [command, ...args] = process.argv.slice(2);
-
-const commands: Record<string, (args: string[]) => Promise<void>> = {
-  fetch: fetchDataset,
-  import: importArchive,
-  remember: rememberFact,
-  "import-voice": importVoice,
-  select: selectCommits,
-  draft: draftPosts,
-  media: hookMedia,
-  review: (args) => (args.includes("--decide") ? decideDrafts(flag(args, "--date") ?? today()) : reviewDrafts(args)),
-  approve: approveDraft,
-  "mark-used": markUsed,
-  status: showStatus,
-  stats: showStats,
-  "eval-add": evalAdd,
-  eval: runEval,
+const COMMANDS: Record<string, CommandSpec & { run: (args: string[]) => Promise<void> }> = {
+  fetch: {
+    summary: "Download the nightly dataset for a date",
+    usage: "fetch [--date YYYY-MM-DD] [--run ID]",
+    options: [
+      ["--date YYYY-MM-DD", "Day to fetch (default: today in IST)"],
+      ["--run ID", "Workflow run to download (default: latest successful)"],
+    ],
+    run: fetchDataset,
+  },
+  import: {
+    summary: "Import exported patch files from a folder",
+    usage: "import <dir> [--date YYYY-MM-DD]",
+    options: [["--date YYYY-MM-DD", "Day to store the patches under (default: today in IST)"]],
+    run: importArchive,
+  },
+  remember: {
+    summary: "Store one voice fact in agent-brain",
+    usage: 'remember "<text>" [--tag TAG] [--source SOURCE]',
+    options: [
+      ["--tag TAG", "Tag for the fact (default: voice_tag)"],
+      ["--source SOURCE", "Where the text came from (default: manual)"],
+    ],
+    run: rememberFact,
+  },
+  "import-voice": {
+    summary: "Store each paragraph of a voice folder in agent-brain",
+    usage: "import-voice [dir]",
+    options: [],
+    run: importVoice,
+  },
+  select: {
+    summary: "Rank the commits worth a post for a date",
+    usage: "select [--date YYYY-MM-DD]",
+    options: [["--date YYYY-MM-DD", "Day to rank (default: today in IST)"]],
+    run: selectCommits,
+  },
+  draft: {
+    summary: "Draft tweets and a blog post from the selected commits",
+    usage: "draft [--date YYYY-MM-DD] [--top N]",
+    options: [
+      ["--date YYYY-MM-DD", "Day to draft (default: today in IST)"],
+      ["--top N", "Commits to draft from in story mode (default: 5)"],
+    ],
+    run: draftPosts,
+  },
+  media: {
+    summary: "Render diff excerpt cards for the top commits",
+    usage: "media [--date YYYY-MM-DD]",
+    options: [["--date YYYY-MM-DD", "Day to render (default: today in IST)"]],
+    run: hookMedia,
+  },
+  review: {
+    summary: "Show drafts beside their evidence, or step through them",
+    usage: "review [--date YYYY-MM-DD] [--decide]",
+    options: [
+      ["--date YYYY-MM-DD", "Day to review (default: today in IST)"],
+      ["--decide", "Approve, reject, edit, or skip each draft with one key"],
+    ],
+    run: (args) => (args.includes("--decide") ? decideDrafts(flag(args, "--date") ?? today()) : reviewDrafts(args)),
+  },
+  approve: {
+    summary: "Approve one draft; nothing is posted",
+    usage: "approve <draft-id> [--date YYYY-MM-DD]",
+    options: [["--date YYYY-MM-DD", "Day the draft belongs to (default: today in IST)"]],
+    run: approveDraft,
+  },
+  "mark-used": {
+    summary: "Mark commits as used so select skips them",
+    usage: "mark-used <sha> [<sha> ...]",
+    options: [],
+    run: markUsed,
+  },
+  status: {
+    summary: "Show a day's drafts and approvals",
+    usage: "status [--date YYYY-MM-DD]",
+    options: [["--date YYYY-MM-DD", "Day to show (default: today in IST)"]],
+    run: showStatus,
+  },
+  stats: {
+    summary: "Report the approval rate across all draft days",
+    usage: "stats",
+    options: [],
+    run: showStats,
+  },
+  "eval-add": {
+    summary: "Save a commit case for the eval set",
+    usage: "eval-add <name> --date YYYY-MM-DD --sha SHA[,SHA] --expect story|theme --notes TEXT",
+    options: [
+      ["--date YYYY-MM-DD", "Archive day the commits come from"],
+      ["--sha SHA[,SHA]", "Commit SHA prefixes to include"],
+      ["--expect story|theme", "Mode the case should produce"],
+      ["--notes TEXT", "What a good post should say"],
+    ],
+    run: evalAdd,
+  },
+  eval: {
+    summary: "Run the saved eval cases through the agent",
+    usage: "eval [--dry-run]",
+    options: [["--dry-run", "Print prompt sizes without calling the agent"]],
+    run: runEval,
+  },
 };
 
-if (!command || !commands[command]) {
-  console.log(`usage: shipnote <${Object.keys(commands).join("|")}> [--date YYYY-MM-DD] [--run ID] [--top N]`);
-  process.exit(command ? 1 : 0);
+const argv = process.argv.slice(2);
+setVerbose(argv.includes("-v") || argv.includes("--verbose"));
+const [command, ...args] = argv.filter((arg) => arg !== "-v" && arg !== "--verbose");
+
+if (argv.includes("--version")) {
+  console.log(pkg.version);
+  process.exit(0);
 }
 
+if (!command || command === "-h" || command === "--help") {
+  console.log(rootHelp(pkg.version, COMMANDS));
+  process.exit(0);
+}
+
+const spec = COMMANDS[command];
+if (!spec) {
+  console.error(`shipnote: '${command}' is not a shipnote command. See 'shipnote --help'.`);
+  process.exit(1);
+}
+
+if (args.includes("-h") || args.includes("--help")) {
+  console.log(commandHelp(spec));
+  process.exit(0);
+}
+
+debug(`command ${command} ${args.join(" ")}`);
 try {
-  await commands[command](args);
+  await spec.run(args);
 } catch (error) {
   console.error(`error: ${(error as Error).message}`);
   process.exit(1);

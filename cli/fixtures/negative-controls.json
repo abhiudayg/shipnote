@@ -1,0 +1,44 @@
+[
+  {
+    "text": "Export retry now adds cosign-signed release artifacts and blockchain audit logs.",
+    "shas": ["1111111111111111111111111111111111111111"],
+    "expect": "reject",
+    "note": "invented claims reuse the commit's export and retry vocabulary"
+  },
+  {
+    "text": "Retry logic now encrypts every payload with AES keys.",
+    "shas": ["1111111111111111111111111111111111111111"],
+    "expect": "reject",
+    "note": "invented encryption claim reuses the retry vocabulary"
+  },
+  {
+    "text": "Dependency bumps migrate the database to PostgreSQL with zero downtime.",
+    "shas": ["3333333333333333333333333333333333333333"],
+    "expect": "reject",
+    "note": "invented migration claim cites a dependency-only commit"
+  },
+  {
+    "text": "The merged onboarding guide rewrites contributor setup for new maintainers.",
+    "shas": ["2222222222222222222222222222222222222222"],
+    "expect": "reject",
+    "note": "invented documentation claim cites a merge commit"
+  },
+  {
+    "text": "Export retry runs with backoff in production.",
+    "shas": ["1111111111111111111111111111111111111111"],
+    "expect": "keep",
+    "note": "known miss: a false word in the claim is one term of many, so the check passes it"
+  },
+  {
+    "text": "Export retry runs with backoff.",
+    "shas": ["1111111111111111111111111111111111111111"],
+    "expect": "keep",
+    "note": "supported: every content word appears in the cited commit"
+  },
+  {
+    "text": "Retries now run three times.",
+    "shas": ["1111111111111111111111111111111111111111"],
+    "expect": "keep",
+    "note": "supported: the cited commit runs the retry loop"
+  }
+]
