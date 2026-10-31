@@ -20,6 +20,7 @@ Each release's notes are taken from its section below, so write entries for what
 - Voice facts read from agent-brain with `agent-brain recall --json`, filtered by the `voice_tag` setting. If agent-brain is unavailable, drafting continues and `review.md` records the error.
 - `eval-add` and `eval` commands that run saved commit cases and report mode, parse, SHA validity, and validation rates. Eval results record the prompt and config hashes.
 - `stats` command that reports the approval rate across all draft days.
+- Published as `@abhiudayg/shipnote` 0.1.0 on GitHub Packages. Installing needs a token with `read:packages`, and the README shows the `.npmrc` setup. The release workflow publishes each version tag.
 - `review --decide` for one-keystroke review: approve, reject, edit, skip, or quit each draft. It needs an interactive terminal.
 - Each drafting run writes `meta.json` with the prompt hash, config hash, rubric, time, estimated tokens and cost, and cost per kept item.
 - `linkedin.md` is written with each successful run, from the blog summary or the first tweet, with links to the cited commits.
