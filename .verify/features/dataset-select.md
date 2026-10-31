@@ -40,3 +40,13 @@ Steps:
 - `fetch` needs a repository that runs the nightly export workflow, and gh signed in. Neither is exercised by the harness.
 - The export script `scripts/export-commits.sh` is checked by shellcheck only. Its live GitHub calls are not tested.
 - The fixture archive has three commits. A larger archive is not covered by the harness.
+
+## Code
+
+- `cli/archive.ts`, `cli/archive.test.ts`
+- `cli/ledger.ts`, `cli/ledger.test.ts`
+- `cli/select.ts`, `cli/select.test.ts`
+- `cli/patch.ts`
+- `cli/fixtures/sample.patch`
+- `scripts/export-commits.sh`
+- `cli/shipnote.ts` (shared entry point; this feature owns the `fetch`, `import`, and `select` commands)

@@ -13,3 +13,5 @@ voice/
 media/
 eval/results/
 node_modules/
+.vercel
+.env*

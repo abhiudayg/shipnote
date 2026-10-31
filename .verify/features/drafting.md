@@ -49,3 +49,15 @@ Steps:
 - Repeat detection is word overlap, not embeddings. The 0.6 threshold is not tuned on real posts.
 - Draft quality on a real model is measured only by `shipnote eval`, and the eval set has ten cases. Two of them are labeled theme and drafted as story.
 - The harness uses a fake agent. A change in prompt wording is not measured by the functional phase.
+
+## Code
+
+- `cli/draft.ts`, `cli/draft.test.ts`
+- `cli/output.ts`, `cli/output.test.ts`
+- `cli/similarity.ts`, `cli/similarity.test.ts`
+- `cli/platforms.ts`, `cli/platforms.test.ts`
+- `cli/eval.ts`, `cli/eval.test.ts`
+- `cli/budget.ts`, `cli/budget.test.ts`
+- `cli/config.ts`, `cli/config.test.ts`
+- `shipnote.example.toml`
+- `cli/shipnote.ts` (shared entry point; this feature owns the `draft`, `eval`, and `eval-add` commands)

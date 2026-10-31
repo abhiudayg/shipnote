@@ -45,3 +45,8 @@ Steps:
 - The key loop itself is checked by hand. A pseudo-terminal run covered approve, reject, skip, and edit, but the harness does not repeat it.
 - Editing a draft with `e` does not change its approval, because approval is recorded by id, not by text.
 - A publish step does not exist. Nothing reads `approved.json` to post, by design.
+
+## Code
+
+- `cli/approval.ts`, `cli/approval.test.ts`
+- `cli/shipnote.ts` (shared entry point; this feature owns the `review`, `approve`, `status`, `mark-used`, and `stats` commands)

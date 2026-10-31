@@ -40,3 +40,9 @@ Steps:
 - `import-voice` runs agent-brain's own secret check. shipnote's pattern check applies only to `remember`.
 - The voice folder is still read directly while drafting. A folder imported with `import-voice` reaches the prompt twice until one path is removed.
 - The functional phase does not run agent-brain, so this feature has no end-to-end check in the harness.
+
+## Code
+
+- `cli/memory.ts`, `cli/memory.test.ts`
+- `cli/recall.ts`, `cli/recall.test.ts`
+- `cli/shipnote.ts` (shared entry point; this feature owns the `remember` and `import-voice` commands)

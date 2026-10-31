@@ -29,3 +29,6 @@ Each file here is a contract for one user-facing behaviour of shipnote. A contra
 | Drafting | [drafting.md](drafting.md) | draft, output, similarity, platforms, eval, budget, config | draft and rerun steps |
 | Review and approval | [review-approval.md](review-approval.md) | approval | approve, review --decide, stats steps |
 | Voice memory | [voice-memory.md](voice-memory.md) | memory, recall | none; needs agent-brain |
+| Repository hygiene and harness | [repo-hygiene.md](repo-hygiene.md) | none | static and functional phases |
+
+Each feature has a knowledge-base entry in `../knowledge-base/<feature>.md` with its decisions and known traps.
