@@ -6,11 +6,11 @@ const modules = [
   { stage: 'Dataset', status: 'Working', title: 'Nightly export', body: 'Public commits and full diffs from the last 30 days, built by a scheduled GitHub Action.' },
   { stage: 'Select', status: 'Working', title: 'Ranked commits', body: 'Merges, lockfile-only changes, and used commits are skipped. The rest are ranked by change and message quality.' },
   { stage: 'Draft', status: 'In progress', title: 'Grounded drafts', body: 'Tweets and blog drafts that cite commit SHAs. Claims that name something missing from the cited commits are removed.' },
-  { stage: 'Review', status: 'In progress', title: 'You approve', body: 'Each draft sits beside its evidence. You approve, edit, or reject with one key. Nothing posts automatically.' },
+  { stage: 'Review', status: 'Working', title: 'You approve', body: 'Each draft sits beside its evidence. Step through the drafts with one key: a approves, r rejects, e edits, and s skips. Nothing posts automatically.' },
 ];
 
 const features = [
-  { title: 'Every claim traced to a commit', body: 'Each factual statement links to the commit and file it came from. Validation runs before you see a draft.', badge: 'SHA and grounding checks · in progress', size: 'md:col-span-2' },
+  { title: 'Every claim traced to a commit', body: 'Each factual statement links to the commit and file it came from. Validation runs before you see a draft.', badge: 'SHA and wording checks · built', size: 'md:col-span-2' },
   { title: 'No auto-posting', body: 'shipnote has no posting code. Drafts are files, and you decide what happens next.', badge: 'By design', size: '' },
   { title: 'Runs on your account', body: 'The nightly job reads the account from the repository owner. A fork needs two settings and one run.', badge: 'Fork and run', size: '' },
   { title: 'Secrets scanned before upload', body: 'Gitleaks, pinned to a version, scans the dataset. A finding fails the run before anything is uploaded.', badge: 'Working', size: 'md:col-span-2' },
@@ -20,8 +20,8 @@ const features = [
 
 const steps = [
   { id: '01', title: 'Export', body: 'A scheduled GitHub Action exports your public commits and full diffs, scans them for secrets, and uploads a short-lived artifact.', code: 'cron: nightly · days: 30' },
-  { id: '02', title: 'Select', body: 'Used and trivial commits drop out. The rest are ranked by how much changed and how clear the message is.', code: 'bun cli/shipnote.ts select' },
-  { id: '03', title: 'Approve', body: 'Drafts land as files beside their evidence, so you review, edit, and approve each one. Real-model quality is the next thing measured.', code: 'status: in progress (M2 to M4)' },
+  { id: '02', title: 'Select', body: 'Used and trivial commits drop out. The rest are ranked by how much changed and how clear the message is.', code: 'shipnote select' },
+  { id: '03', title: 'Approve', body: 'Drafts land as files beside their evidence. review --decide steps through them with one key, and approve records the choice. Nothing is posted.', code: 'status: working (M4)' },
 ];
 ---
 
@@ -74,7 +74,7 @@ const steps = [
         </div>
         <div class="flex flex-wrap items-center justify-between gap-3 border-t border-white/[0.08] bg-black/60 px-5 py-4 font-mono text-xs text-zinc-400">
           <span>2026-10-30: 450 commits, 447 selected, 3 skipped</span>
-          <span class="text-zinc-500">draft and review: built, real-model quality next</span>
+          <span class="text-zinc-500">draft and review built; 12 eval cases, every item kept</span>
         </div>
       </div>
     </section>

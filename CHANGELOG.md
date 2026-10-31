@@ -6,6 +6,26 @@ Each release's notes are taken from its section below, so write entries for what
 
 ## [Unreleased]
 
+### Added
+
+- Docker-style help. `shipnote --help` lists the commands with summaries, `shipnote COMMAND --help` shows a command's usage and options, and `shipnote --version` prints the version.
+- `-v` or `--verbose` on every command writes step-by-step details to stderr. Stdout is unchanged.
+- A spinner with elapsed seconds for steps that take more than a second: reading the archive, the agent call, each eval case, dataset downloads, and voice imports. Quick commands print nothing.
+- `draft` prints the tweets when it finishes, with each commit link under "Reply with."
+- Negative controls: invented claims that reuse commit words, checked by tests. Four are rejected, and one known miss is recorded.
+- Ten eval cases for drafting quality, eight story and two theme, with notes written from each commit's diff and agent-brain context.
+- A `LICENSE` file with the MIT license.
+
+### Changed
+
+- Tweets are shown without their commit links, which go under "Reply with," since links in the main post reduce reach.
+- A tweet is dropped when more than 40% of its content words are absent from the commits it cites.
+- Duplicate helpers and a redundant corpus pass were removed from the CLI. The command output is unchanged.
+
+### Fixed
+
+- A stalled agent is ended as a process group at its timeout, and on Ctrl-C. Before, killing only the direct child could leave the CLI running past its timeout, with the agent's child still alive.
+
 ## [0.2.1] - 2026-10-31
 
 ### Changed
