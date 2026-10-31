@@ -1,0 +1,45 @@
+name: ci
+
+on:
+  pull_request:
+  push:
+    branches:
+      - master
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: "1.4.4"
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Test
+        run: bun test cli
+
+      - name: Typecheck
+        run: bun run typecheck
+
+      - name: Lint shell scripts
+        run: shellcheck scripts/export-commits.sh scripts/release-notes.sh
+
+      - name: Check release notes
+        run: scripts/release-notes.sh "$(jq -r .version package.json)" > /dev/null
+
+      - name: Build website
+        run: |
+          cd website
+          bun install --frozen-lockfile
+          bun run build
