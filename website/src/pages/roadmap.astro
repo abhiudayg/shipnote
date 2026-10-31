@@ -2,10 +2,10 @@
 import Docs from '../layouts/Docs.astro';
 
 const milestones = [
-  { id: 'M0', title: 'Evaluation set', status: 'In progress', body: 'Two commit cases exist so far. Build 10 to 20 past commit clusters with the post each should have produced, then track SHA validity, rubric pass rate, and approval rate for every change.' },
+  { id: 'M0', title: 'Evaluation set', status: 'In progress', body: 'Twelve commit cases are in the repository, with notes on what a good post should say. On the real model, every case kept its items, with 100% SHA validity and 83% mode match. Approval rate is tracked by stats once drafts are reviewed.' },
   { id: 'M1', title: 'Fetch and select', status: 'Done', body: 'Download and archive the dataset, drop used and trivial commits, and rank the rest.' },
   { id: 'M1b', title: 'Memory from agent-brain', status: 'In progress', body: 'Voice facts are read through agent-brain recall. remember stores one fact, and import-voice stores a folder of writing without duplicates. Pending merge.' },
-  { id: 'M2', title: 'Story drafts for tweets', status: 'In progress', body: 'Drafts cite commit SHAs and name only files, identifiers, and numbers that appear in the cited commits. Each run records its prompt and config hashes. Tested with a fake agent; quality on a real model is not measured yet.' },
+  { id: 'M2', title: 'Story drafts for tweets', status: 'In progress', body: 'Drafts cite commit SHAs and name only files, identifiers, and numbers that appear in the cited commits. Tweet wording is checked against the cited commits, and links go under replies. Invented-claim controls are rejected. Whether a draft is good is still a judgment made by hand.' },
   { id: 'M3', title: 'Blog drafts and theme mode', status: 'Planned', body: 'Blog posts in story and theme modes, agent-brain retrieval, and quality checks for theme posts.' },
   { id: 'M4', title: 'Review and approve', status: 'In progress', body: 'review shows each draft beside its evidence, review --decide takes one key per draft, and approve, mark-used, and stats are built. Two weeks of daily use come before anything changes.' },
 ];
@@ -14,7 +14,7 @@ const milestones = [
 <Docs title="Roadmap: shipnote" description="What shipnote builds next: the evaluation set, the drafting CLI, blog drafts, and the daily review flow." active="/roadmap/">
   <p class="font-mono text-xs tracking-wider text-sky-400 uppercase">Roadmap</p>
   <h1 class="text-gradient mt-3 text-4xl font-semibold tracking-[-0.035em] md:text-5xl">Milestones</h1>
-  <p class="mt-4 text-lg leading-7 text-zinc-400">The nightly dataset, selection, drafting, and review commands are built. The evaluation set and real-model quality come next.</p>
+  <p class="mt-4 text-lg leading-7 text-zinc-400">The nightly dataset, selection, drafting, review, help, and progress are built. The next step is judging draft quality by hand on real posts.</p>
   <ol class="mt-12 space-y-4">
     {milestones.map((m) => (
       <li class="gradient-border flex gap-5 rounded-2xl p-6">

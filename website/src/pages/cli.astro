@@ -17,6 +17,13 @@ const rows = [
   <h2 class="mt-14 text-2xl font-semibold tracking-tight">Requirements</h2>
   <p class="mt-3 leading-7 text-zinc-400"><a href="https://bun.sh" class="text-sky-400 hover:text-sky-300">Bun</a>, git, and the GitHub CLI signed in with <code class="font-mono text-zinc-200">gh auth login</code>. Install the package with <code class="font-mono text-zinc-200">npm install -g @abhiudayg/shipnote</code>, which adds the <code class="font-mono text-zinc-200">shipnote</code> command.</p>
 
+  <h2 class="mt-12 text-2xl font-semibold tracking-tight">Help and global options</h2>
+  <p class="mt-3 leading-7 text-zinc-400">Like Docker, <code class="font-mono text-zinc-200">shipnote --help</code> lists the commands, and <code class="font-mono text-zinc-200">shipnote COMMAND --help</code> shows one command's usage and options. Global options work with every command.</p>
+  <pre class={code}><code>shipnote --help
+shipnote draft --help
+shipnote select --date 2026-10-30 --verbose   # step-by-step details on stderr
+shipnote --version</code></pre>
+
   <h2 class="mt-12 text-2xl font-semibold tracking-tight">fetch</h2>
   <p class="mt-3 leading-7 text-zinc-400">Downloads the newest successful nightly run, or the run you name, into <code class="font-mono text-zinc-200">archive/&lt;date&gt;/</code>. If that date is already archived, it does nothing.</p>
   <pre class={code}><code>bun cli/shipnote.ts fetch
@@ -50,7 +57,7 @@ bun cli/shipnote.ts select --date 2026-10-30</code></pre>
   </div>
 
   <h2 class="mt-12 text-2xl font-semibold tracking-tight">draft</h2>
-  <p class="mt-3 leading-7 text-zinc-400">Drafts tweets and a blog post from the selected commits for a date, into <code class="font-mono text-zinc-200">drafts/&lt;date&gt;/</code>. Every claim is checked against the commits it cites. A draft that names a file, identifier, or number missing from those commits is removed, and so is one that repeats an approved post from the last 30 days. If the run fails, <code class="font-mono text-zinc-200">review.md</code> says why and no drafts are written.</p>
+  <p class="mt-3 leading-7 text-zinc-400">Drafts tweets and a blog post from the selected commits for a date, into <code class="font-mono text-zinc-200">drafts/&lt;date&gt;/</code>. Every claim is checked against the commits it cites. A draft that names a file, identifier, or number missing from those commits is removed, and so is one that repeats an approved post from the last 30 days. If the run fails, <code class="font-mono text-zinc-200">review.md</code> says why and no drafts are written. The tweets are printed when the run finishes, without their links. The commit links go under Reply with, since links in the main post reduce reach.</p>
   <pre class={code}><code>bun cli/shipnote.ts draft
 bun cli/shipnote.ts draft --date 2026-10-30 --top 3</code></pre>
 
