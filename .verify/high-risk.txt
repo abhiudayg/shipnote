@@ -1,0 +1,8 @@
+cli/draft.ts
+cli/output.ts
+cli/similarity.ts
+cli/approval.ts
+cli/shipnote.ts
+cli/memory.ts
+.github/workflows/*.yml
+package.json

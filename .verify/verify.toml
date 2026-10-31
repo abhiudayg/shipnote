@@ -1,8 +1,20 @@
 [verify]
 commands = [
   ".verify/run.sh",
+  ".verify/run.sh doctor",
+  ".verify/run.sh unit",
+  ".verify/run.sh unit drafting",
+  ".verify/run.sh unit review-approval",
+  ".verify/run.sh unit voice-memory",
+  ".verify/run.sh unit dataset-select",
+  ".verify/run.sh unit media-cards",
+  ".verify/run.sh static",
+  ".verify/run.sh functional",
+  "bun test cli",
+  "bun run typecheck",
 ]
 
 [verify.default]
 command = [".verify/run.sh"]
-timeout_secs = 300
+timeout_secs = 900
+hook = true
