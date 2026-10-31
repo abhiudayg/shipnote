@@ -1,8 +1,31 @@
 {
-  "name": "shipnote",
+  "name": "@abhiudayg/shipnote",
   "version": "0.1.0",
-  "private": true,
+  "description": "Turn the commits you ship into tweet and blog drafts that you approve. Local-first, with every claim checked against its commit.",
+  "keywords": ["changelog", "commits", "social", "drafts", "cli"],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/abhiudayg/shipnote.git"
+  },
   "type": "module",
+  "bin": {
+    "shipnote": "cli/shipnote.ts"
+  },
+  "files": [
+    "cli/**/*.ts",
+    "!cli/**/*.test.ts",
+    "!cli/fixtures/**",
+    "scripts/export-commits.sh",
+    "shipnote.example.toml",
+    "README.md",
+    "CHANGELOG.md"
+  ],
+  "engines": {
+    "bun": ">=1.4.0"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
   "packageManager": "bun@1.4.4",
   "scripts": {
     "shipnote": "bun cli/shipnote.ts",
