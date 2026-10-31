@@ -18,11 +18,20 @@ Each release's notes are taken from its section below, so write entries for what
 - Theme mode for days with no commit above `min_story_score`. It writes one blog post and no tweets, from recent commits as examples.
 - Voice samples read from a local `voice/` folder, within the context budget.
 - Voice facts read from agent-brain with `agent-brain recall --json`, filtered by the `voice_tag` setting. If agent-brain is unavailable, drafting continues and `review.md` records the error.
-- `eval-add` and `eval` commands that run saved commit cases and report mode, parse, and validation rates.
+- `eval-add` and `eval` commands that run saved commit cases and report mode, parse, SHA validity, and validation rates. Eval results record the prompt and config hashes.
+- `stats` command that reports the approval rate across all draft days.
+- `review --decide` for one-keystroke review: approve, reject, edit, skip, or quit each draft. It needs an interactive terminal.
+- Each drafting run writes `meta.json` with the prompt hash, config hash, rubric, time, estimated tokens and cost, and cost per kept item.
+- `linkedin.md` is written with each successful run, from the blog summary or the first tweet, with links to the cited commits.
+- `budget.timeout_seconds` (default 300) stops an agent call that does not finish in time. Timeouts are retried within `max_retries`.
 
 ### Changed
 
 - Denylisted terms are now skipped during selection, alongside denylisted repositories.
+- Commit text and voice samples can no longer close their own `<commit>` or `<voice>` block in the prompt.
+- A draft that names a file, backticked identifier, or number absent from the commits it cites is rejected.
+- A draft that repeats an approved post from the last 30 days is rejected.
+- A run that fails writes `review.md` with the reason and writes no drafts. Earlier drafts and approvals are kept.
 - Vercel builds the website from the repository root through `vercel.json`.
 
 ## [0.1.0] - 2026-10-30

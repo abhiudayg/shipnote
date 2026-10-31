@@ -2,12 +2,14 @@ export type Budget = {
   maxTokens: number;
   maxCostUsd: number;
   maxRetries: number;
+  timeoutSeconds: number;
 };
 
 export const DEFAULT_BUDGET: Budget = {
   maxTokens: 200000,
   maxCostUsd: 1,
   maxRetries: 2,
+  timeoutSeconds: 300,
 };
 
 export function estimateTokens(text: string): number {

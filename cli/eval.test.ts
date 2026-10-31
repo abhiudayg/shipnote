@@ -17,7 +17,7 @@ describe("evaluateCase", () => {
       blog: null,
     });
     const result = await evaluateCase(evalCase, 0, "", async () => raw);
-    expect(result).toMatchObject({ parsed: true, produced: 2, kept: 1, error: null });
+    expect(result).toMatchObject({ parsed: true, produced: 2, kept: 1, shaValid: 1, error: null });
   });
 
   test("records an agent failure without throwing", async () => {
@@ -42,13 +42,13 @@ describe("evaluateCase", () => {
 describe("summarize", () => {
   test("reports rates across cases", () => {
     const summary = summarize([
-      { name: "a", expectMode: "story", mode: "story", modeMatch: true, parsed: true, produced: 2, kept: 1, error: null },
-      { name: "b", expectMode: "story", mode: "theme", modeMatch: false, parsed: false, produced: 0, kept: 0, error: "x" },
+      { name: "a", expectMode: "story", mode: "story", modeMatch: true, parsed: true, produced: 2, kept: 1, shaValid: 1, error: null },
+      { name: "b", expectMode: "story", mode: "theme", modeMatch: false, parsed: false, produced: 0, kept: 0, shaValid: 0, error: "x" },
     ]);
-    expect(summary).toEqual({ cases: 2, modeMatchRate: 0.5, parseRate: 0.5, validationPassRate: 0.5 });
+    expect(summary).toEqual({ cases: 2, modeMatchRate: 0.5, parseRate: 0.5, shaValidRate: 0.5, validationPassRate: 0.5 });
   });
 
   test("returns zeros for no cases", () => {
-    expect(summarize([])).toEqual({ cases: 0, modeMatchRate: 0, parseRate: 0, validationPassRate: 0 });
+    expect(summarize([])).toEqual({ cases: 0, modeMatchRate: 0, parseRate: 0, shaValidRate: 0, validationPassRate: 0 });
   });
 });

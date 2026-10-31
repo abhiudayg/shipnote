@@ -17,6 +17,7 @@ export type CaseResult = {
   parsed: boolean;
   produced: number;
   kept: number;
+  shaValid: number;
   error: string | null;
 };
 
@@ -24,6 +25,7 @@ export type Summary = {
   cases: number;
   modeMatchRate: number;
   parseRate: number;
+  shaValidRate: number;
   validationPassRate: number;
 };
 
@@ -41,6 +43,7 @@ export async function evaluateCase(
     modeMatch: mode === evalCase.expectMode,
     kept: 0,
     produced: 0,
+    shaValid: 0,
   };
 
   let raw: string;
@@ -60,7 +63,8 @@ export async function evaluateCase(
   const produced = draft.tweets.length + (draft.blog ? 1 : 0);
   const checked = check(mode === "theme" ? { ...draft, tweets: [] } : draft, evalCase.commits);
   const kept = checked.draft.tweets.length + (checked.draft.blog ? 1 : 0);
-  return { ...base, parsed: true, produced, kept, error: null };
+  const badSha = checked.rejections.filter((rejection) => rejection.reason.startsWith("cites ")).length;
+  return { ...base, parsed: true, produced, kept, shaValid: produced - badSha, error: null };
 }
 
 function ratio(part: number, whole: number): number {
@@ -70,10 +74,12 @@ function ratio(part: number, whole: number): number {
 export function summarize(results: CaseResult[]): Summary {
   const produced = results.reduce((sum, result) => sum + result.produced, 0);
   const kept = results.reduce((sum, result) => sum + result.kept, 0);
+  const shaValid = results.reduce((sum, result) => sum + result.shaValid, 0);
   return {
     cases: results.length,
     modeMatchRate: ratio(results.filter((result) => result.modeMatch).length, results.length),
     parseRate: ratio(results.filter((result) => result.parsed).length, results.length),
+    shaValidRate: ratio(shaValid, produced),
     validationPassRate: ratio(kept, produced),
   };
 }
