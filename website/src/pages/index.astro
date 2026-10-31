@@ -74,7 +74,7 @@ const steps = [
         </div>
         <div class="flex flex-wrap items-center justify-between gap-3 border-t border-white/[0.08] bg-black/60 px-5 py-4 font-mono text-xs text-zinc-400">
           <span>2026-10-30: 450 commits, 447 selected, 3 skipped</span>
-          <span class="text-zinc-500">drafting and approval: next milestones</span>
+          <span class="text-zinc-500">draft and review: built, real-model quality next</span>
         </div>
       </div>
     </section>
@@ -128,7 +128,7 @@ const steps = [
       <div class="gradient-border mx-auto max-w-4xl rounded-3xl p-10 text-center md:p-14">
         <p class="font-mono text-xs tracking-wider text-sky-400 uppercase">Get started</p>
         <h2 class="mt-3 text-3xl font-semibold tracking-[-0.03em] md:text-4xl">Run it on your own account</h2>
-        <p class="mx-auto mt-3 max-w-lg text-zinc-400">Fork the repository, then fetch and select from your own nightly dataset.</p>
+        <p class="mx-auto mt-3 max-w-lg text-zinc-400">Install the CLI, then fetch, select, and draft from your own nightly dataset. A fork runs the nightly job; without one, export your own commits.</p>
         <div class="mt-9 overflow-hidden rounded-xl border border-white/[0.08] bg-black/70 text-left">
           <div class="flex items-center gap-2 border-b border-white/[0.08] px-4 py-2.5">
             <span class="h-2 w-2 rounded-full bg-white/15"></span>
@@ -136,10 +136,11 @@ const steps = [
             <span class="h-2 w-2 rounded-full bg-white/15"></span>
             <span class="ml-2 font-mono text-[11px] text-zinc-500">bash</span>
           </div>
-          <pre class="overflow-x-auto p-5 font-mono text-[13px] leading-7 text-zinc-300"><code>$ gh repo fork abhiudayg/shipnote --clone
-$ cd shipnote && bun install
-$ SHIPNOTE_REPO=you/shipnote bun cli/shipnote.ts fetch
-$ bun cli/shipnote.ts select</code></pre>
+          <pre class="overflow-x-auto p-5 font-mono text-[13px] leading-7 text-zinc-300"><code>$ npm install -g @abhiudayg/shipnote
+$ SHIPNOTE_REPO=you/shipnote shipnote fetch
+$ shipnote select
+$ shipnote draft
+$ shipnote review</code></pre>
         </div>
         <a href="/docs/" class="mt-8 inline-block text-sm text-sky-400 transition-colors hover:text-sky-300">Read the documentation →</a>
       </div>
