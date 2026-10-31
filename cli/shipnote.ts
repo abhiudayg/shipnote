@@ -2,7 +2,8 @@
 import { createHash } from "node:crypto";
 import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import { approve, claimShas, decisionFor, draftIds, readApproved, unapprove, writeApproved, type Decision } from "./approval";
+import { approve, claimShas, decisionFor, draftIds, readApproved, recordDecision, readDecisions, unapprove, writeApproved, type Decision } from "./approval";
+import { tuningReport, type Sample } from "./tune";
 import { importPatches } from "./archive";
 import { importDocs } from "./docs";
 import { checkBudget, estimateCostUsd, estimateTokens, type Budget } from "./budget";
@@ -13,7 +14,7 @@ import { recallFacts, runCommand } from "./recall";
 import { score } from "./select";
 import { agentCommand, loadConfig, type Config, type Provider } from "./config";
 import { mergeLedger, readLedger, releaseShas, validateShas, writeLedger } from "./ledger";
-import { BLOG_WORDS, buildPrompt, check, chooseMode, type Draft, MAX_TWEET_CHARS, parseDraft, promptSha256, sourceWords } from "./draft";
+import { BLOG_WORDS, buildPrompt, check, chooseMode, type Checked, type Draft, MAX_TWEET_CHARS, MAX_TWEETS, openingWords, parseDraft, promptSha256, repairNotes, sourceWords } from "./draft";
 import { parsePatch, type Commit } from "./patch";
 import { writeDrafts, writeFailure, type RunMeta } from "./output";
 import { REPEAT_WINDOW_DAYS, type RecentPost } from "./similarity";
@@ -125,6 +126,7 @@ async function approveDraft(args: string[]): Promise<void> {
   const items = claimItems(date);
   writeApproved(path, approve(readApproved(path), id, draftIds(items)));
   const shas = markClaimUsed(date, id);
+  recordDecision(draftPath(date, "decisions.json"), id, "approved");
   console.log(`approved ${id} for ${date}; ${shas} commit(s) marked used. Nothing was posted.`);
 }
 
@@ -157,6 +159,19 @@ async function showStatus(args: string[]): Promise<void> {
   console.log(`ledger: ${readLedger(LEDGER).length} used commit(s)`);
 }
 
+async function tuneCommand(): Promise<void> {
+  const samples: Sample[] = draftDays().flatMap((day) => {
+    const decisions = readDecisions(draftPath(day, "decisions.json"));
+    return readClaims(day).flatMap((claim) => {
+      const id = draftIds([claim.item])[0];
+      const decision = decisions[id];
+      if (!claim.item.startsWith("tweet ") || decision === undefined) return [];
+      return [{ words: openingWords(claim.text), approved: decision === "approved" }];
+    });
+  });
+  console.log(tuningReport(samples));
+}
+
 async function selectCommits(args: string[]): Promise<void> {
   const date = flag(args, "--date") ?? today();
   const commits = await loadCommits(join(ARCHIVE, date));
@@ -183,6 +198,16 @@ function stopAgentGroup(pid: number): void {
   }
 }
 
+async function readText(reader: ReadableStreamDefaultReader<Uint8Array>): Promise<string> {
+  const decoder = new TextDecoder();
+  let text = "";
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (done) return text + decoder.decode();
+    text += decoder.decode(value, { stream: true });
+  }
+}
+
 async function callAgent(provider: Provider, prompt: string, timeoutSeconds: number): Promise<string> {
   const { argv, stdin } = agentCommand(provider, prompt);
   const proc = Bun.spawn(argv, {
@@ -192,24 +217,26 @@ async function callAgent(provider: Provider, prompt: string, timeoutSeconds: num
     detached: true,
   });
   debug(`agent ${provider.command} pid ${proc.pid}: prompt ${prompt.length} characters, timeout ${timeoutSeconds}s`);
-  let timedOut = false;
   const stop = () => stopAgentGroup(proc.pid);
   const interrupt = () => {
     stop();
     process.exit(130);
   };
-  const timer = setTimeout(() => {
-    timedOut = true;
-    stop();
-  }, timeoutSeconds * 1000);
+  const stdout = proc.stdout.getReader();
+  const stderr = proc.stderr.getReader();
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const deadline = new Promise<never>((_, reject) => {
+    timer = setTimeout(() => {
+      stop();
+      void stdout.cancel();
+      void stderr.cancel();
+      reject(new Error(`agent did not finish within ${timeoutSeconds}s`));
+    }, timeoutSeconds * 1000);
+  });
+  const output = Promise.all([readText(stdout), readText(stderr), proc.exited]);
   process.once("SIGINT", interrupt);
   try {
-    const [stdout, stderr, code] = await Promise.all([
-      new Response(proc.stdout).text(),
-      new Response(proc.stderr).text(),
-      proc.exited,
-    ]);
-    if (timedOut) throw new Error(`agent did not finish within ${timeoutSeconds}s`);
+    const [stdout, stderr, code] = await Promise.race([output, deadline]);
     if (code !== 0) throw new Error(`agent exited ${code}: ${stderr.trim()}`);
     return stdout;
   } finally {
@@ -416,12 +443,14 @@ async function decideDrafts(date: string): Promise<void> {
       approved = approve(approved, id, ids);
       writeApproved(path, approved);
       markClaimUsed(date, id);
+      recordDecision(draftPath(date, "decisions.json"), id, "approved");
     }
     if (decision === "reject") {
       const wasApproved = approved.includes(id);
       approved = unapprove(approved, id);
       writeApproved(path, approved);
       if (wasApproved) releaseClaim(date, id);
+      recordDecision(draftPath(date, "decisions.json"), id, "rejected");
     }
     if (decision === "edit") await editClaim(date, claim);
   }
@@ -507,6 +536,44 @@ function releaseClaim(date: string, id: string): void {
   writeLedger(LEDGER, releaseShas(readLedger(LEDGER), released, stillApproved));
 }
 
+async function repairTweets(
+  provider: Provider,
+  budget: Budget,
+  prompt: string,
+  draft: Draft,
+  first: Checked,
+  chosen: Commit[],
+  recent: RecentPost[],
+): Promise<{ result: Checked; tokens: number; cost: number }> {
+  const notes = repairNotes(draft, first.rejections);
+  const skipped = { result: first, tokens: 0, cost: 0 };
+  if (notes === null) return skipped;
+  const repairPrompt = `${prompt}\n\n${notes}`;
+  const tokens = estimateTokens(repairPrompt);
+  const cost = estimateCostUsd(tokens, provider.usdPerMillionTokens);
+  if (checkBudget(tokens, provider.usdPerMillionTokens, budget)) return skipped;
+  try {
+    const raw = await withProgress("repairing rejected tweets", () => callWithRetries(provider, repairPrompt, budget));
+    const repaired = check({ tweets: parseDraft(raw).tweets, blog: null }, chosen, recent);
+    return {
+      result: {
+        draft: { tweets: [...first.draft.tweets, ...repaired.draft.tweets].slice(0, MAX_TWEETS), blog: first.draft.blog },
+        rejections: [
+          ...first.rejections.filter((rejection) => rejection.item === "blog"),
+          ...repaired.rejections
+            .filter((rejection) => rejection.item !== "blog")
+            .map((rejection) => ({ item: `repair ${rejection.item}`, reason: rejection.reason })),
+        ],
+      },
+      tokens,
+      cost,
+    };
+  } catch (error) {
+    const rejection = { item: "repair", reason: `the repair call failed: ${(error as Error).message}` };
+    return { result: { ...first, rejections: [...first.rejections, rejection] }, tokens, cost };
+  }
+}
+
 async function draftPosts(args: string[]): Promise<void> {
   const date = flag(args, "--date") ?? today();
   const top = Number(flag(args, "--top") ?? 12);
@@ -578,10 +645,14 @@ async function draftPosts(args: string[]): Promise<void> {
     return;
   }
 
-  const result = check(mode === "theme" ? { ...draft, tweets: [] } : draft, chosen, recentPosts(date));
+  const first = check(mode === "theme" ? { ...draft, tweets: [] } : draft, chosen, recentPosts(date));
+  const repair = await repairTweets(provider, config.budget, prompt, draft, first, chosen, recentPosts(date));
+  const result = repair.result;
+  const totalTokens = tokens + repair.tokens;
+  const totalCost = cost + repair.cost;
   if (result.draft.tweets.length === 0 && !result.draft.blog) {
     const reasons = result.rejections.map((r) => `${r.item}: ${r.reason}`).join("; ");
-    fail(`No draft passed validation, so none was written. Rejected: ${reasons}`, tokens, cost);
+    fail(`No draft passed validation, so none was written. Rejected: ${reasons}`, totalTokens, totalCost);
     return;
   }
   writeDrafts(dir, result, chosen, {
@@ -591,7 +662,7 @@ async function draftPosts(args: string[]): Promise<void> {
     skipped: skipped.length,
     usage,
     voice: voice.note,
-    meta: runMeta(tokens, cost),
+    meta: runMeta(totalTokens, totalCost),
   });
   console.log(`${date}: ${result.draft.tweets.length} tweet(s), blog ${result.draft.blog ? "yes" : "no"}; see ${dir}`);
   console.log(readFileSync(join(dir, "tweets.md"), "utf8"));
@@ -720,6 +791,12 @@ const COMMANDS: Record<string, CommandSpec & { run: (args: string[]) => Promise<
     usage: "stats",
     options: [],
     run: showStats,
+  },
+  tune: {
+    summary: "Show approval rates by tweet opening length, from your decisions",
+    usage: "tune",
+    options: [],
+    run: tuneCommand,
   },
   "eval-add": {
     summary: "Save a commit case for the eval set",

@@ -62,6 +62,22 @@ export function buildPrompt(commits: Commit[], mode: Mode, voice: string): strin
     .join("\n\n");
 }
 
+export function openingWords(text: string): number {
+  return wordCount(firstSentence(text));
+}
+
+export function repairNotes(draft: Draft, rejections: Rejection[]): string | null {
+  const notes = draft.tweets.slice(0, MAX_TWEETS).flatMap((tweet, index) => {
+    const rejection = rejections.find((item) => item.item === `tweet ${index + 1}`);
+    return rejection ? [`- "${tweet.text}" was rejected: ${rejection.reason}.`] : [];
+  });
+  if (notes.length === 0) return null;
+  return [
+    "Some tweets in your previous answer were rejected. Rewrite each rejected tweet so it passes, keep its shas, and return the full JSON again. Rejected tweets:",
+    ...notes,
+  ].join("\n");
+}
+
 export function parseDraft(raw: string): Draft {
   const start = raw.indexOf("{");
   const end = raw.lastIndexOf("}");

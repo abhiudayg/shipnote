@@ -35,10 +35,15 @@ export function score(commit: Commit): number {
   return Number((0.6 * size + 0.2 * newFiles + 0.2 * quality).toFixed(3));
 }
 
+function areaOf(file: string): string {
+  const parts = file.split("/");
+  return parts.length === 1 ? file : parts.slice(0, Math.min(parts.length - 1, 2)).join("/");
+}
+
 export function topicKey(repo: string, files: string[]): string {
   const counts = new Map<string, number>();
   for (const file of files) {
-    const area = file.split("/")[0];
+    const area = areaOf(file);
     counts.set(area, (counts.get(area) ?? 0) + 1);
   }
   const [area] = [...counts].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))[0] ?? [""];

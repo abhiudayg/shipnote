@@ -12,10 +12,16 @@ Each release's notes are taken from its section below, so write entries for what
 - A quality gate drops a tweet whose first sentence is over 25 words, that uses a hype word, or that names no file, command, or number.
 - Rejecting an approved draft in `review --decide` releases its commits, unless another approved draft still uses them.
 - Drafting skips a topic that an approved post in the last 30 days already covers, so new work in that folder is not repeated.
+- When the quality gate rejects tweets, drafting makes one repair call with the rejected text and reasons. Passing repaired tweets join the first pass's tweets. A repair is skipped when the budget refuses it.
+- Each approve or reject is recorded in `decisions.json`. `shipnote tune` reports approval rates by tweet opening length, and suggests a length only after 20 decisions. It never changes a threshold.
+
+### Fixed
+
+- A draft's agent call ends at its timeout even when a child process keeps the output pipe open. Before, the call could wait until the child exited.
 
 ### Changed
 
-- Drafting reads the whole day's selection and keeps one commit per topic (repo and top-level folder). The `--top` default is now 12 topics, up from 5 commits.
+- Drafting reads the whole day's selection and keeps one commit per topic (repo and the most common folder, two levels deep). The `--top` default is now 12 topics, up from 5 commits.
 - Drafts use plain, active sentences under 25 words that lead with the concrete result, cite the exact file, command, flag, or number from the diff, and avoid filler and hype words.
 
 ## [0.3.1] - 2026-10-31

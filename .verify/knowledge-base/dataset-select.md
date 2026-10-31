@@ -12,3 +12,5 @@
 
 ## Where to look
 - Ranking and skip rules: `cli/select.ts`. Parsing: `cli/patch.ts`. Archive copy: `cli/archive.ts`.
+- Topics group commits by repository and the most common folder among their files, two levels deep (`topicKey` in `cli/select.ts`). Drafting keeps one commit per topic, so a large commit set reaches the model as topics, not commits.
+- A topic that an approved post covered in the last 30 days is skipped by drafting (`recentTopics` in `cli/shipnote.ts`).

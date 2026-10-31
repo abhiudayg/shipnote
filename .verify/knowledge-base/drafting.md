@@ -21,3 +21,6 @@
 ## Negative controls
 - cli/fixtures/negative-controls.json has four invented claims that reuse commit words. All four are rejected.
 - Three controls must be kept: two supported tweets and one known miss, a tweet with a single false word among several true ones, which the 40% limit lets through.
+- Code gate (`qualityProblem` in `cli/draft.ts`): a tweet is dropped when it uses a hype word, its first sentence is over 25 words, or it names no file, command, or number. The word list is `HYPE_WORDS`, shared with the prompt.
+- Repair loop: when tweets are rejected, one repair call is made with the rejected text and reasons (`repairNotes` in `cli/draft.ts`, `repairTweets` in `cli/shipnote.ts`). Its passing tweets join the first pass's. The repair is skipped when the budget refuses it, and a failed repair call is recorded in `review.md`.
+- The agent call ends at its deadline even if a child process keeps the output pipe open. Only the agent's own process group is killed; a child that leaves the group keeps running.
