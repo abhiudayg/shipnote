@@ -61,6 +61,15 @@ skipped:
 
 The package installs a `shipnote` command. It runs under Bun, so install [Bun](https://bun.sh) first.
 
+The package is published to [GitHub Packages](https://github.com/abhiudayg/shipnote/packages). Installing needs a GitHub token with the `read:packages` scope. Create a classic token at https://github.com/settings/tokens, then add these two lines to `~/.npmrc`:
+
+```
+@abhiudayg:registry=https://npm.pkg.github.com
+//npm.pkg.github.com/:_authToken=YOUR_TOKEN
+```
+
+Then install:
+
 ```bash
 npm install -g @abhiudayg/shipnote
 ```
