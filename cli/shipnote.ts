@@ -4,6 +4,7 @@ import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync
 import { join } from "node:path";
 import { approve, decisionFor, draftIds, readApproved, unapprove, writeApproved, type Decision } from "./approval";
 import { importPatches } from "./archive";
+import { importDocs } from "./docs";
 import { checkBudget, estimateCostUsd, estimateTokens, type Budget } from "./budget";
 import { altText, BLOG_SIZE, excerptCard, excerptMatchesDiff, firstExcerpt, TWEET_SIZE } from "./media";
 import { evaluateCase, type EvalCase, summarize } from "./eval";
@@ -12,7 +13,7 @@ import { recallFacts, runCommand } from "./recall";
 import { score } from "./select";
 import { agentCommand, loadConfig, type Config, type Provider } from "./config";
 import { mergeLedger, readLedger, validateShas, writeLedger } from "./ledger";
-import { buildPrompt, check, chooseMode, type Draft, MAX_TWEET_CHARS, parseDraft, promptSha256 } from "./draft";
+import { BLOG_WORDS, buildPrompt, check, chooseMode, type Draft, MAX_TWEET_CHARS, parseDraft, promptSha256, sourceWords } from "./draft";
 import { parsePatch, type Commit } from "./patch";
 import { writeDrafts, writeFailure, type RunMeta } from "./output";
 import { REPEAT_WINDOW_DAYS, type RecentPost } from "./similarity";
@@ -509,6 +510,11 @@ async function draftPosts(args: string[]): Promise<void> {
     fail("No commits passed selection, so there is nothing to draft.");
     return;
   }
+  const words = sourceWords(chosen);
+  if (mode === "theme" && words < BLOG_WORDS.min) {
+    fail(`The sources hold ${words} words, fewer than the ${BLOG_WORDS.min}-word minimum for a theme blog, so the blog would be padded. No agent call was made.`);
+    return;
+  }
 
   const voice = await loadVoice(config);
   const prompt = buildPrompt(chosen, mode, voice.text);
@@ -565,6 +571,14 @@ async function importArchive(args: string[]): Promise<void> {
   console.log(`imported ${copied.length} patch file(s) into ${destination}`);
 }
 
+async function importDocuments(args: string[]): Promise<void> {
+  const source = args[0];
+  if (!source) throw new Error("usage: shipnote import-docs <dir> [--date YYYY-MM-DD]");
+  const date = flag(args, "--date") ?? today();
+  const copied = importDocs(source, join(ARCHIVE, date));
+  console.log(`imported ${copied.length} document(s) into ${join(ARCHIVE, date, "docs")}`);
+}
+
 async function rememberFact(args: string[]): Promise<void> {
   const [text] = positionals(args);
   if (!text) throw new Error('usage: shipnote remember "<text>" [--tag TAG] [--source SOURCE]');
@@ -596,6 +610,12 @@ const COMMANDS: Record<string, CommandSpec & { run: (args: string[]) => Promise<
     usage: "import <dir> [--date YYYY-MM-DD]",
     options: [["--date YYYY-MM-DD", "Day to store the patches under (default: today in IST)"]],
     run: importArchive,
+  },
+  "import-docs": {
+    summary: "Import a folder of markdown documents as drafting sources",
+    usage: "import-docs <dir> [--date YYYY-MM-DD]",
+    options: [["--date YYYY-MM-DD", "Day to store the documents under (default: today in IST)"]],
+    run: importDocuments,
   },
   remember: {
     summary: "Store one voice fact in agent-brain",

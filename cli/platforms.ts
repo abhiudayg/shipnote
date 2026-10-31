@@ -1,9 +1,11 @@
 import type { Checked } from "./draft";
+import { DOCS_PREFIX } from "./docs";
 import type { Commit } from "./patch";
 
 export const LINKEDIN_MAX_CHARS = 3000;
 
-export function commitUrl(repo: string, sha: string): string {
+export function commitUrl(repo: string, sha: string): string | null {
+  if (repo.startsWith(DOCS_PREFIX)) return null;
   return `https://github.com/${repo}/commit/${sha}`;
 }
 
@@ -16,7 +18,8 @@ export function linkedinPost(result: Checked, commits: Commit[]): string | null 
   const byHash = new Map(commits.map((c) => [c.sha, c]));
   const links = [...new Set(source.shas)].flatMap((sha) => {
     const commit = byHash.get(sha);
-    return commit ? [commitUrl(commit.repo, sha)] : [];
+    const url = commit && commitUrl(commit.repo, sha);
+    return url ? [url] : [];
   });
   return [text, "", ...links].join("\n");
 }
