@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="assets/logo.svg" width="128" alt="shipnote logo">
+  <img src="https://raw.githubusercontent.com/abhiudayg/shipnote/master/assets/logo.svg" width="128" alt="shipnote logo">
 </p>
 
 <h1 align="center">shipnote</h1>

@@ -6,6 +6,8 @@ Each release's notes are taken from its section below, so write entries for what
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-10-31
+
 ### Added
 
 - `remember "<text>"` command that stores one voice fact in agent-brain. Optional `--tag` (default `voice_tag`) and `--source` (default `manual`). Text that matches a secret pattern is refused.
@@ -34,6 +36,10 @@ Each release's notes are taken from its section below, so write entries for what
 - A draft that repeats an approved post from the last 30 days is rejected.
 - A run that fails writes `review.md` with the reason and writes no drafts. Earlier drafts and approvals are kept.
 - Vercel builds the website from the repository root through `vercel.json`.
+
+### Fixed
+
+- The README logo uses an absolute URL, so it shows on the GitHub Packages and npm pages.
 
 ## [0.1.0] - 2026-10-30
 
