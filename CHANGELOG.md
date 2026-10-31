@@ -6,6 +6,8 @@ Each release's notes are taken from its section below, so write entries for what
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-10-31
+
 ### Added
 
 - Docker-style help. `shipnote --help` lists the commands with summaries, `shipnote COMMAND --help` shows a command's usage and options, and `shipnote --version` prints the version.

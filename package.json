@@ -1,6 +1,6 @@
 {
   "name": "@abhiudayg/shipnote",
-  "version": "0.2.1",
+  "version": "0.3.0",
   "description": "Turn the commits you ship into tweet and blog drafts that you approve. Local-first, with every claim checked against its commit.",
   "keywords": ["changelog", "commits", "social", "drafts", "cli"],
   "repository": {
