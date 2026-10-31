@@ -4,6 +4,18 @@ import Docs from '../layouts/Docs.astro';
 const entries = [
   {
     date: '2026-10-31',
+    title: 'Drafting, review, and memory',
+    items: [
+      'Added draft, review, approve, mark-used, status, and stats commands. Drafts are written as files beside their evidence, and nothing posts.',
+      'Drafts are rejected when they name a file, identifier, or number missing from the commits they cite, or when they repeat an approved post from the last 30 days.',
+      'Failed runs write a review file with the reason and produce no drafts. Earlier drafts and approvals are kept.',
+      'Added review --decide for one-key approve, reject, edit, or skip, and linkedin.md alongside the tweets and blog.',
+      'Each run records its prompt and config hashes, time, and cost per kept item. Agent calls time out after a set limit.',
+      'Added remember and import-voice to store voice facts in agent-brain, and eval reports SHA validity alongside validation rates.',
+    ],
+  },
+  {
+    date: '2026-10-31',
     title: 'Product page and analytics',
     items: [
       'Redesigned the home page as a product page: pipeline, features, how it works, privacy, and a fork-and-run section.',

@@ -7,9 +7,9 @@ const features = [
   { title: 'Full diffs, archived locally', status: 'Working', body: 'Commits are exported with full patches. fetch downloads the artifact into a dated folder on your machine, so later steps need no network.', size: '' },
   { title: 'Secret scanning before upload', status: 'Working', body: 'Gitleaks, pinned to a version, scans the dataset. A finding fails the run. A small allowlist covers known false positives.', size: '' },
   { title: 'Ranked commit selection', status: 'Working', body: 'select skips merges, lockfile-only changes, used commits, and denylisted repos. It ranks the rest by change size, new files, and message quality.', size: 'md:col-span-2' },
-  { title: 'Drafts grounded in commit SHAs', status: 'Planned', body: 'Drafts will cite the commits they are based on. A claim with no matching commit is removed before you see the draft.', size: '' },
-  { title: 'Review and approval', status: 'Planned', body: 'A review step shows each draft beside its evidence. You approve, edit, or reject it. Nothing is posted by shipnote.', size: '' },
-  { title: 'Voice and context from agent-brain', status: 'Planned', body: 'Past posts and project notes will be stored in agent-brain and used as context while drafting, so drafts match your voice and avoid repeats.', size: 'md:col-span-2' },
+  { title: 'Drafts grounded in commit SHAs', status: 'In progress', body: 'Drafts cite the commits they are based on. A named file, identifier, or number that is not in those commits removes the claim before you see the draft.', size: '' },
+  { title: 'Review and approval', status: 'In progress', body: 'review shows each draft beside its evidence, and review --decide lets you approve, edit, reject, or skip with one key. Nothing is posted by shipnote.', size: '' },
+  { title: 'Voice and context from agent-brain', status: 'In progress', body: 'Voice facts are read from agent-brain while drafting. A draft that repeats an approved post from the last 30 days is removed.', size: 'md:col-span-2' },
   { title: 'Works on your fork', status: 'Working', body: 'The workflow reads the account from the repository owner. A fork needs two settings and one manual run, with no code changes.', size: '' },
 ];
 ---

@@ -4,10 +4,10 @@ import Docs from '../layouts/Docs.astro';
 const stages = [
   { title: 'Fetch', status: 'Working', body: 'The nightly GitHub Action finds every public repo where your account made commits in the last 30 days, exports each commit with its full diff, scans the export for secrets, and uploads it as an artifact that expires after 10 days.' },
   { title: 'Select', status: 'Working', body: 'Commits already used are skipped, as are denylisted repos and trivial commits such as lockfile-only changes. The rest are ranked by change size, new files, and message quality.' },
-  { title: 'Decide the mode', status: 'Planned', body: 'If at least one story clears the threshold, shipnote writes a story post. Otherwise it writes one theme post and no tweets.' },
-  { title: 'Draft', status: 'Planned', body: 'The story goes to the agent you configure, with voice samples and recent posts from agent-brain. The agent returns structured JSON, so code can check every claim.' },
-  { title: 'Validate', status: 'Planned', body: 'Every cited SHA must exist in the dataset, and every named file, function, or number must appear in that commit. Tweets must fit 280 characters. Claims that fail are dropped and logged.' },
-  { title: 'Review and approve', status: 'Planned', body: 'You see each draft beside its evidence and approve, edit, or reject it. Nothing is marked used until you run the command that does so, and nothing posts automatically.' },
+  { title: 'Decide the mode', status: 'Working', body: 'If at least one story clears the threshold, shipnote writes a story post. Otherwise it writes one theme post and no tweets.' },
+  { title: 'Draft', status: 'In progress', body: 'The story goes to the agent you configure, with voice samples and facts from agent-brain. The agent returns structured JSON, and each run records the prompt and config hashes it used. Each call has a time limit.' },
+  { title: 'Validate', status: 'Working', body: 'Every cited SHA must exist in the dataset. Every named file, backticked identifier, or number of two or more digits must appear in the cited commits. Tweets must fit 280 characters. A draft that repeats an approved post from the last 30 days is dropped. Claims that fail are logged in review.md.' },
+  { title: 'Review and approve', status: 'In progress', body: 'You see each draft beside its evidence and approve, edit, or reject it, one key at a time. Nothing is marked used until you run the command that does so, and nothing posts automatically.' },
 ];
 ---
 
