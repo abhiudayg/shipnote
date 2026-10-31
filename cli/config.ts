@@ -86,6 +86,7 @@ function toBudget(value: unknown): Budget {
     maxTokens: number(value.max_tokens_per_run, DEFAULT_BUDGET.maxTokens, "budget.max_tokens_per_run"),
     maxCostUsd: number(value.max_cost_usd_per_run, DEFAULT_BUDGET.maxCostUsd, "budget.max_cost_usd_per_run"),
     maxRetries: number(value.max_retries, DEFAULT_BUDGET.maxRetries, "budget.max_retries"),
+    timeoutSeconds: number(value.timeout_seconds, DEFAULT_BUDGET.timeoutSeconds, "budget.timeout_seconds"),
   };
 }
 

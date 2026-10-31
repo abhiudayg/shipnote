@@ -1,43 +1,28 @@
 ---
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import Docs from '../layouts/Docs.astro';
 
-const entries = [
-  {
-    date: '2026-10-31',
-    title: 'Product page and analytics',
-    items: [
-      'Redesigned the home page as a product page: pipeline, features, how it works, privacy, and a fork-and-run section.',
-      'Added Vercel Analytics to every page.',
-      'Updated the roadmap for agent-brain memory. Voice facts are read through recall, and remember and import-corpus ship in agent-brain 1.0.0-rc6.',
-    ],
-  },
-  {
-    date: '2026-10-30',
-    title: 'CLI reference and README revamp',
-    items: [
-      'Added fetch and select commands, with unit tests against a fixture patch.',
-      'Changed the selection score to a log scale, so larger changes rank above smaller ones.',
-      'Rewrote the README to describe what is built, including setup for a fork.',
-    ],
-  },
-  {
-    date: '2026-10-30',
-    title: 'Website on Vercel',
-    items: [
-      'Deployed an Astro and Tailwind site with setup, privacy, roadmap, CLI, and documentation pages.',
-      'Added the chevron logo and the black theme used across the site.',
-    ],
-  },
-  {
-    date: '2026-10-30',
-    title: 'Nightly dataset',
-    items: [
-      'Workflow exports public commits with full diffs, scans them with gitleaks, and uploads a 10-day artifact.',
-      'Repository discovery uses GitHub contribution data, filtered to public repositories.',
-      'Scheduled and manual runs take a days input, with 30 days as the default.',
-    ],
-  },
-];
+const changelog = readFileSync(join(process.cwd(), '..', 'CHANGELOG.md'), 'utf8');
+
+const segments = (text: string) => text.split('`').map((part, index) => ({ part, code: index % 2 === 1 }));
+
+const releases: { name: string; date: string | null; groups: { name: string; items: ReturnType<typeof segments>[] }[] }[] = [];
+for (const line of changelog.split('\n')) {
+  const version = line.match(/^## \[(.+?)\](?: - (\d{4}-\d{2}-\d{2}))?$/);
+  if (version) {
+    releases.push({ name: version[1], date: version[2] ?? null, groups: [] });
+    continue;
+  }
+  const section = line.match(/^### (.+)$/);
+  if (section && releases.length > 0) {
+    releases[releases.length - 1].groups.push({ name: section[1], items: [] });
+    continue;
+  }
+  const item = line.match(/^- (.+)$/);
+  const group = releases[releases.length - 1]?.groups.at(-1);
+  if (item && group) group.items.push(segments(item[1]));
+}
 ---
 
 <Docs title="Changelog: shipnote" description="Changes to the shipnote dataset job, the CLI, and the website." active="/changelog/">
@@ -45,15 +30,25 @@ const entries = [
   <h1 class="text-gradient mt-3 text-4xl font-semibold tracking-[-0.035em] md:text-5xl">What changed</h1>
   <p class="mt-4 text-lg leading-7 text-zinc-400">Newest first. Entries describe what shipped, not what is planned.</p>
   <ol class="mt-12 space-y-10">
-    {entries.map((entry) => (
+    {releases.map((release) => (
       <li class="border-l border-white/[0.1] pl-6">
-        <p class="font-mono text-xs text-zinc-500">{entry.date}</p>
-        <h2 class="mt-2 text-xl font-semibold">{entry.title}</h2>
-        <ul class="mt-4 space-y-2 text-sm leading-6 text-zinc-400">
-          {entry.items.map((item) => (
-            <li class="flex gap-3"><span class="text-sky-400">•</span><span>{item}</span></li>
-          ))}
-        </ul>
+        <p class="font-mono text-xs text-zinc-500">{release.date ?? 'Unreleased'}</p>
+        <h2 class="mt-2 text-xl font-semibold">{release.name === 'Unreleased' ? 'Unreleased' : `Version ${release.name}`}</h2>
+        {release.groups.map((group) => (
+          <div class="mt-5">
+            <h3 class="font-mono text-xs tracking-wider text-sky-400 uppercase">{group.name}</h3>
+            <ul class="mt-3 space-y-2 text-sm leading-6 text-zinc-400">
+              {group.items.map((item) => (
+                <li class="flex gap-3">
+                  <span class="text-sky-400">•</span>
+                  <span>
+                    {item.map((s) => (s.code ? <code class="font-mono text-zinc-200">{s.part}</code> : s.part))}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        ))}
       </li>
     ))}
   </ol>

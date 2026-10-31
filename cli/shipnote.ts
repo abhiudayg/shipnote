@@ -1,17 +1,21 @@
-import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+#!/usr/bin/env bun
+import { createHash } from "node:crypto";
+import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import { approve, draftIds, readApproved, writeApproved } from "./approval";
+import { approve, decisionFor, draftIds, readApproved, unapprove, writeApproved, type Decision } from "./approval";
 import { importPatches } from "./archive";
-import { checkBudget, estimateCostUsd, estimateTokens } from "./budget";
+import { checkBudget, estimateCostUsd, estimateTokens, type Budget } from "./budget";
 import { altText, BLOG_SIZE, excerptCard, excerptMatchesDiff, firstExcerpt, TWEET_SIZE } from "./media";
 import { evaluateCase, type EvalCase, summarize } from "./eval";
+import { importCorpus, storeFact } from "./memory";
 import { recallFacts, runCommand } from "./recall";
 import { score } from "./select";
 import { agentCommand, loadConfig, type Config, type Provider } from "./config";
 import { mergeLedger, readLedger, validateShas, writeLedger } from "./ledger";
-import { buildPrompt, check, chooseMode, MAX_TWEET_CHARS, parseDraft } from "./draft";
+import { buildPrompt, check, chooseMode, type Draft, MAX_TWEET_CHARS, parseDraft, promptSha256 } from "./draft";
 import { parsePatch, type Commit } from "./patch";
-import { writeDrafts } from "./output";
+import { writeDrafts, writeFailure, type RunMeta } from "./output";
+import { REPEAT_WINDOW_DAYS, type RecentPost } from "./similarity";
 import { select, type Rules } from "./select";
 
 const ARCHIVE = "archive";
@@ -92,8 +96,10 @@ function loadLedger(): Set<string> {
   return new Set(readLedger(LEDGER));
 }
 
+const VALUE_FLAGS = ["--date", "--tag", "--source"];
+
 function positionals(args: string[]): string[] {
-  return args.filter((arg, index) => !arg.startsWith("--") && !(index > 0 && args[index - 1] === "--date"));
+  return args.filter((arg, index) => !arg.startsWith("--") && !(index > 0 && VALUE_FLAGS.includes(args[index - 1])));
 }
 
 function draftPath(date: string, file: string): string {
@@ -158,20 +164,34 @@ async function selectCommits(args: string[]): Promise<void> {
   }
 }
 
-async function callAgent(provider: Provider, prompt: string): Promise<string> {
+async function callAgent(provider: Provider, prompt: string, timeoutSeconds: number): Promise<string> {
   const { argv, stdin } = agentCommand(provider, prompt);
   const proc = Bun.spawn(argv, {
     stdin: stdin === null ? "ignore" : new Blob([stdin]),
     stdout: "pipe",
     stderr: "pipe",
   });
-  const [stdout, stderr, code] = await Promise.all([
-    new Response(proc.stdout).text(),
-    new Response(proc.stderr).text(),
-    proc.exited,
-  ]);
-  if (code !== 0) throw new Error(`agent exited ${code}: ${stderr.trim()}`);
-  return stdout;
+  let timedOut = false;
+  const timer = setTimeout(() => {
+    timedOut = true;
+    proc.kill();
+  }, timeoutSeconds * 1000);
+  try {
+    const [stdout, stderr, code] = await Promise.all([
+      new Response(proc.stdout).text(),
+      new Response(proc.stderr).text(),
+      proc.exited,
+    ]);
+    if (timedOut) throw new Error(`agent did not finish within ${timeoutSeconds}s`);
+    if (code !== 0) throw new Error(`agent exited ${code}: ${stderr.trim()}`);
+    return stdout;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+function configSha256(): string {
+  return existsSync(CONFIG) ? createHash("sha256").update(readFileSync(CONFIG)).digest("hex") : "none";
 }
 
 function loadCases(): EvalCase[] {
@@ -228,7 +248,7 @@ async function runEval(args: string[]): Promise<void> {
     const result = await evaluateCase(evalCase, config.minStoryScore, voice, async (prompt) => {
       const refusal = checkBudget(estimateTokens(prompt), provider.usdPerMillionTokens, config.budget);
       if (refusal) throw new Error(refusal);
-      return callWithRetries(provider, prompt, config.budget.maxRetries);
+      return callWithRetries(provider, prompt, config.budget);
     });
     results.push(result);
     console.log(`${result.name}: mode ${result.mode} (expected ${result.expectMode}), kept ${result.kept}/${result.produced}${result.error ? `, error: ${result.error}` : ""}`);
@@ -237,7 +257,8 @@ async function runEval(args: string[]): Promise<void> {
   const summary = summarize(results);
   mkdirSync(EVAL_RESULTS, { recursive: true });
   const stamp = new Date().toISOString().replace(/[:.]/g, "-");
-  writeFileSync(join(EVAL_RESULTS, `${stamp}.json`), `${JSON.stringify({ model: provider.model, effort: provider.effort, summary, results }, null, 2)}\n`);
+  const versions = { promptSha256: promptSha256(), configSha256: configSha256() };
+  writeFileSync(join(EVAL_RESULTS, `${stamp}.json`), `${JSON.stringify({ model: provider.model, effort: provider.effort, ...versions, summary, results }, null, 2)}\n`);
   console.log(`summary: ${JSON.stringify(summary)}`);
 }
 
@@ -257,12 +278,12 @@ async function loadVoice(config: Config): Promise<{ text: string; note: string }
   return { text, note };
 }
 
-async function callWithRetries(provider: Provider, prompt: string, retries: number): Promise<string> {
+async function callWithRetries(provider: Provider, prompt: string, budget: Budget): Promise<string> {
   for (let attempt = 0; ; attempt += 1) {
     try {
-      return await callAgent(provider, prompt);
+      return await callAgent(provider, prompt, budget.timeoutSeconds);
     } catch (error) {
-      if (attempt >= retries) throw error;
+      if (attempt >= budget.maxRetries) throw error;
       await Bun.sleep(1000 * (attempt + 1));
     }
   }
@@ -311,28 +332,128 @@ async function reviewDrafts(args: string[]): Promise<void> {
     return;
   }
 
-  const sources = JSON.parse(readFileSync(draftPath(date, "sources.json"), "utf8")) as {
-    claims: Array<{
-      item: string;
-      text: string;
-      commits: Array<{ sha: string; repo: string | null; subject: string | null; files: string[] }>;
-    }>;
-  };
   const approved = readApproved(draftPath(date, "approved.json"));
-
-  for (const claim of sources.claims) {
-    const [id] = draftIds([claim.item]);
-    const length = claim.item.startsWith("tweet") ? ` (${claim.text.length}/${MAX_TWEET_CHARS} characters)` : "";
-    console.log(`\n[${id}] ${approved.includes(id) ? "approved" : "not approved"}${length}`);
-    console.log(claim.text);
-    for (const commit of claim.commits) {
-      console.log(`  evidence ${commit.sha.slice(0, 7)} ${commit.repo ?? "unknown repo"}: ${commit.subject ?? ""}`);
-      for (const file of commit.files.slice(0, 5)) console.log(`    ${file}`);
-    }
-  }
+  for (const claim of readClaims(date)) printClaim(claim, approved);
 
   const rejected = reviewText.split("## Rejected")[1];
   if (rejected) console.log(`\n## Rejected${rejected.trimEnd()}`);
+}
+
+function printClaim(claim: Claim, approved: string[]): void {
+  const [id] = draftIds([claim.item]);
+  const length = claim.item.startsWith("tweet") ? ` (${claim.text.length}/${MAX_TWEET_CHARS} characters)` : "";
+  console.log(`\n[${id}] ${approved.includes(id) ? "approved" : "not approved"}${length}`);
+  console.log(claim.text);
+  for (const commit of claim.commits) {
+    console.log(`  evidence ${commit.sha.slice(0, 7)} ${commit.repo ?? "unknown repo"}: ${commit.subject ?? ""}`);
+    for (const file of commit.files.slice(0, 5)) console.log(`    ${file}`);
+  }
+}
+
+function readKey(): Promise<string> {
+  return new Promise((resolve) => {
+    process.stdin.setRawMode(true);
+    process.stdin.resume();
+    process.stdin.once("data", (data) => {
+      process.stdin.setRawMode(false);
+      process.stdin.pause();
+      resolve(data.toString());
+    });
+  });
+}
+
+async function decideDrafts(date: string): Promise<void> {
+  if (!process.stdin.isTTY) throw new Error("review --decide needs an interactive terminal");
+  const claims = readClaims(date);
+  if (claims.length === 0) throw new Error(`no drafts for ${date}; run "shipnote draft --date ${date}" first`);
+  const ids = draftIds(claims.map((claim) => claim.item));
+  const path = draftPath(date, "approved.json");
+  let approved = readApproved(path);
+
+  for (const claim of claims) {
+    const id = draftIds([claim.item])[0];
+    printClaim(claim, approved);
+    let decision: Decision | null = null;
+    while (decision === null) {
+      process.stdout.write("[a]pprove [r]eject [e]dit [s]kip [q]uit: ");
+      const key = await readKey();
+      console.log(key);
+      if (key === "\u0003") return;
+      decision = decisionFor(key);
+    }
+    if (decision === "quit") return;
+    if (decision === "approve") {
+      approved = approve(approved, id, ids);
+      writeApproved(path, approved);
+    }
+    if (decision === "reject") {
+      approved = unapprove(approved, id);
+      writeApproved(path, approved);
+    }
+    if (decision === "edit") await editClaim(date, claim);
+  }
+  console.log(`approved for ${date}: ${approved.length > 0 ? approved.join(", ") : "none"}. Nothing was posted.`);
+}
+
+async function editClaim(date: string, claim: Claim): Promise<void> {
+  const [command, ...flags] = (process.env.EDITOR ?? "vi").split(" ");
+  const file = claim.item === "blog" ? "blog.md" : "tweets.md";
+  await Bun.spawn([command, ...flags, draftPath(date, file)], { stdin: "inherit", stdout: "inherit", stderr: "inherit" }).exited;
+}
+
+async function reviewAll(args: string[]): Promise<void> {
+  if (args.includes("--decide")) return decideDrafts(flag(args, "--date") ?? today());
+  return reviewDrafts(args);
+}
+
+async function showStats(): Promise<void> {
+  const days = existsSync(DRAFTS) ? readdirSync(DRAFTS).filter(isDate) : [];
+  let items = 0;
+  let approvedItems = 0;
+  for (const day of days) {
+    const claims = readClaims(day);
+    const approved = readApproved(draftPath(day, "approved.json"));
+    items += claims.length;
+    approvedItems += claims.filter((claim) => approved.includes(draftIds([claim.item])[0])).length;
+  }
+  const rate = items === 0 ? "n/a" : `${((approvedItems / items) * 100).toFixed(1)}%`;
+  console.log(`${days.length} draft day(s), ${items} item(s), ${approvedItems} approved; approval rate ${rate}`);
+}
+
+type Claim = {
+  item: string;
+  text: string;
+  commits: Array<{ sha: string; repo: string | null; subject: string | null; files: string[] }>;
+};
+
+function readClaims(date: string): Claim[] {
+  const path = draftPath(date, "sources.json");
+  if (!existsSync(path)) return [];
+  return (JSON.parse(readFileSync(path, "utf8")) as { claims: Claim[] }).claims;
+}
+
+function isDate(value: string): boolean {
+  return /^\d{4}-\d{2}-\d{2}$/.test(value);
+}
+
+function shiftDays(date: string, days: number): string {
+  const shifted = new Date(`${date}T00:00:00Z`);
+  shifted.setUTCDate(shifted.getUTCDate() + days);
+  return shifted.toISOString().slice(0, 10);
+}
+
+function recentPosts(date: string): RecentPost[] {
+  if (!existsSync(DRAFTS)) return [];
+  const cutoff = shiftDays(date, -REPEAT_WINDOW_DAYS);
+  return readdirSync(DRAFTS)
+    .filter((day) => isDate(day) && day >= cutoff && day < date)
+    .flatMap((day) => {
+      const approved = readApproved(draftPath(day, "approved.json"));
+      return readClaims(day).flatMap((claim) => {
+        const id = draftIds([claim.item])[0];
+        return approved.includes(id) ? [{ date: day, id, text: claim.text }] : [];
+      });
+    });
 }
 
 async function draftPosts(args: string[]): Promise<void> {
@@ -340,16 +461,34 @@ async function draftPosts(args: string[]): Promise<void> {
   const top = Number(flag(args, "--top") ?? 5);
   const config = loadConfig(CONFIG);
   const provider = resolvedProvider(config);
-  const commits = await loadCommits(join(ARCHIVE, date));
+  const dir = join(DRAFTS, date);
+  const started = performance.now();
+  const runMeta = (estimatedTokens: number, estimatedCostUsd: number): RunMeta => ({
+    model: provider.model,
+    effort: provider.effort,
+    promptSha256: promptSha256(),
+    configSha256: configSha256(),
+    durationMs: performance.now() - started,
+    estimatedTokens,
+    estimatedCostUsd,
+  });
+  const fail = (error: string, estimatedTokens = 0, estimatedCostUsd = 0): void => {
+    writeFailure(dir, date, error, runMeta(estimatedTokens, estimatedCostUsd));
+    console.log(`no drafts for ${date}; see ${join(dir, "review.md")}`);
+  };
+
+  let commits: Commit[];
+  try {
+    commits = await loadCommits(join(ARCHIVE, date));
+  } catch (error) {
+    fail(`The dataset could not be loaded: ${(error as Error).message}`);
+    return;
+  }
   const { selected, skipped } = select(commits, currentRules(config));
   const mode = chooseMode(selected[0]?.score, config.minStoryScore);
   const chosen = mode === "story" ? selected.slice(0, top) : selected.slice(0, THEME_EXAMPLES);
-  const dir = join(DRAFTS, date);
-  const info = { date, mode, model: provider.model, effort: provider.effort, selected: chosen.length, skipped: skipped.length };
-
   if (chosen.length === 0) {
-    writeDrafts(dir, null, [], { ...info, error: "No commits passed selection, so there is nothing to draft." });
-    console.log(`no commits to draft for ${date}; see ${join(dir, "review.md")}`);
+    fail("No commits passed selection, so there is nothing to draft.");
     return;
   }
 
@@ -358,34 +497,43 @@ async function draftPosts(args: string[]): Promise<void> {
   const tokens = estimateTokens(prompt);
   const cost = estimateCostUsd(tokens, provider.usdPerMillionTokens);
   const usage = `prompt about ${tokens} tokens and $${cost.toFixed(4)} (estimates; the agent CLI reports no usage)`;
-  const runInfo = { ...info, usage, voice: voice.note };
   const refusal = checkBudget(tokens, provider.usdPerMillionTokens, config.budget);
   if (refusal) {
-    writeDrafts(dir, null, chosen, { ...runInfo, error: `Budget check failed: ${refusal}. No agent call was made.` });
-    console.log(`budget refused the draft; see ${join(dir, "review.md")}`);
+    fail(`Budget check failed: ${refusal}. No agent call was made.`, tokens, cost);
     return;
   }
 
   let raw: string;
   try {
-    raw = await callWithRetries(provider, prompt, config.budget.maxRetries);
+    raw = await callWithRetries(provider, prompt, config.budget);
   } catch (error) {
-    writeDrafts(dir, null, chosen, { ...runInfo, error: `The agent call failed: ${(error as Error).message}` });
-    console.log(`agent call failed; see ${join(dir, "review.md")}`);
+    fail(`The agent call failed: ${(error as Error).message}`, tokens, cost);
     return;
   }
 
-  let draft;
+  let draft: Draft;
   try {
     draft = parseDraft(raw);
   } catch (error) {
-    writeDrafts(dir, null, chosen, { ...runInfo, error: `The model output could not be parsed: ${(error as Error).message}` });
-    console.log(`model output unreadable; see ${join(dir, "review.md")}`);
+    fail(`The model output could not be parsed: ${(error as Error).message}`, tokens, cost);
     return;
   }
 
-  const result = check(mode === "theme" ? { ...draft, tweets: [] } : draft, chosen);
-  writeDrafts(dir, result, chosen, runInfo);
+  const result = check(mode === "theme" ? { ...draft, tweets: [] } : draft, chosen, recentPosts(date));
+  if (result.draft.tweets.length === 0 && !result.draft.blog) {
+    const reasons = result.rejections.map((r) => `${r.item}: ${r.reason}`).join("; ");
+    fail(`No draft passed validation, so none was written. Rejected: ${reasons}`, tokens, cost);
+    return;
+  }
+  writeDrafts(dir, result, chosen, {
+    date,
+    mode,
+    selected: chosen.length,
+    skipped: skipped.length,
+    usage,
+    voice: voice.note,
+    meta: runMeta(tokens, cost),
+  });
   console.log(`${date}: ${result.draft.tweets.length} tweet(s), blog ${result.draft.blog ? "yes" : "no"}; see ${dir}`);
 }
 
@@ -398,24 +546,43 @@ async function importArchive(args: string[]): Promise<void> {
   console.log(`imported ${copied.length} patch file(s) into ${destination}`);
 }
 
+async function rememberFact(args: string[]): Promise<void> {
+  const [text] = positionals(args);
+  if (!text) throw new Error('usage: shipnote remember "<text>" [--tag TAG] [--source SOURCE]');
+  const tag = flag(args, "--tag") ?? loadConfig(CONFIG).voiceTag;
+  const source = flag(args, "--source") ?? "manual";
+  const stored = await storeFact(runCommand, text, tag, source);
+  console.log(stored.deduplicated ? `already stored as ${stored.id}` : `stored ${stored.id}`);
+}
+
+async function importVoice(args: string[]): Promise<void> {
+  const [dir = VOICE_DIR] = positionals(args);
+  const report = await importCorpus(runCommand, dir, loadConfig(CONFIG).voiceTag);
+  const refused = report.rejected_secret + report.rejected_too_long;
+  console.log(`read ${report.paragraphs} paragraph(s) from ${report.files} file(s): stored ${report.stored}, already stored ${report.deduplicated}, refused ${refused}`);
+}
+
 const [command, ...args] = process.argv.slice(2);
 
 const commands: Record<string, (args: string[]) => Promise<void>> = {
   fetch: fetchDataset,
   import: importArchive,
+  remember: rememberFact,
+  "import-voice": importVoice,
   select: selectCommits,
   draft: draftPosts,
   approve: approveDraft,
   "mark-used": markUsed,
   status: showStatus,
-  review: reviewDrafts,
+  review: reviewAll,
+  stats: showStats,
   media: hookMedia,
   "eval-add": evalAdd,
   eval: runEval,
 };
 
 if (!command || !commands[command]) {
-  console.log("usage: shipnote <fetch|import|select|draft|media|review|approve|mark-used|status|eval-add|eval> [--date YYYY-MM-DD] [--run ID] [--top N]");
+  console.log("usage: shipnote <fetch|import|remember|import-voice|select|draft|media|review|approve|mark-used|status|stats|eval-add|eval> [--date YYYY-MM-DD] [--run ID] [--top N]");
   process.exit(command ? 1 : 0);
 }
 

@@ -57,6 +57,33 @@ skipped:
   1 no file changes
 ```
 
+## Install without forking
+
+The package installs a `shipnote` command. It runs under Bun, so install [Bun](https://bun.sh) first.
+
+The package is published to [GitHub Packages](https://github.com/abhiudayg/shipnote/packages). Installing needs a GitHub token with the `read:packages` scope. Create a classic token at https://github.com/settings/tokens, then add these two lines to `~/.npmrc`:
+
+```
+@abhiudayg:registry=https://npm.pkg.github.com
+//npm.pkg.github.com/:_authToken=YOUR_TOKEN
+```
+
+Then install:
+
+```bash
+npm install -g @abhiudayg/shipnote
+```
+
+`fetch` downloads the nightly dataset from a repository that runs the export workflow. Without a fork, export your own commits with your GitHub login instead, then import them:
+
+```bash
+LOGIN=your-github-login AUTHOR="you@example.com" "$(npm root -g)/@abhiudayg/shipnote/scripts/export-commits.sh" ./export
+shipnote import ./export
+shipnote select
+```
+
+Run the commands from a folder of your own. Drafts, the ledger, and `shipnote.toml` are written there, not in the package.
+
 ## CLI reference
 
 ```

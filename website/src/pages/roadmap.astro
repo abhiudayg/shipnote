@@ -2,19 +2,19 @@
 import Docs from '../layouts/Docs.astro';
 
 const milestones = [
-  { id: 'M0', title: 'Evaluation set', status: 'Planned', body: 'Build 10 to 20 past commit clusters with the post each should have produced. No prompt tuning happens before this exists.' },
-  { id: 'M1', title: 'Fetch and select', status: 'Done', body: 'Download and archive the dataset, drop used and trivial commits, and rank the rest. Dry-run output only.' },
-  { id: 'M1b', title: 'Memory from agent-brain', status: 'In progress', body: 'Voice facts are read through agent-brain recall. agent-brain 1.0.0-rc6 adds remember and import-corpus for writing and importing posts, so repeat checks can build on them.' },
-  { id: 'M2', title: 'Story drafts for tweets', status: 'Planned', body: 'Draft tweets from one story, with SHA-checked claims, sources, and hook visuals taken from the diff.' },
+  { id: 'M0', title: 'Evaluation set', status: 'In progress', body: 'Two commit cases exist so far. Build 10 to 20 past commit clusters with the post each should have produced, then track SHA validity, rubric pass rate, and approval rate for every change.' },
+  { id: 'M1', title: 'Fetch and select', status: 'Done', body: 'Download and archive the dataset, drop used and trivial commits, and rank the rest.' },
+  { id: 'M1b', title: 'Memory from agent-brain', status: 'In progress', body: 'Voice facts are read through agent-brain recall. remember stores one fact, and import-voice stores a folder of writing without duplicates. Pending merge.' },
+  { id: 'M2', title: 'Story drafts for tweets', status: 'In progress', body: 'Drafts cite commit SHAs and name only files, identifiers, and numbers that appear in the cited commits. Each run records its prompt and config hashes. Tested with a fake agent; quality on a real model is not measured yet.' },
   { id: 'M3', title: 'Blog drafts and theme mode', status: 'Planned', body: 'Blog posts in story and theme modes, agent-brain retrieval, and quality checks for theme posts.' },
-  { id: 'M4', title: 'Review and approve', status: 'Planned', body: 'A fast daily review command, approve and mark-used steps, and two weeks of daily use before anything changes.' },
+  { id: 'M4', title: 'Review and approve', status: 'In progress', body: 'review shows each draft beside its evidence, review --decide takes one key per draft, and approve, mark-used, and stats are built. Two weeks of daily use come before anything changes.' },
 ];
 ---
 
 <Docs title="Roadmap: shipnote" description="What shipnote builds next: the evaluation set, the drafting CLI, blog drafts, and the daily review flow." active="/roadmap/">
   <p class="font-mono text-xs tracking-wider text-sky-400 uppercase">Roadmap</p>
   <h1 class="text-gradient mt-3 text-4xl font-semibold tracking-[-0.035em] md:text-5xl">Milestones</h1>
-  <p class="mt-4 text-lg leading-7 text-zinc-400">The nightly dataset and the fetch and select commands work. Drafting comes next.</p>
+  <p class="mt-4 text-lg leading-7 text-zinc-400">The nightly dataset, selection, drafting, and review commands are built. The evaluation set and real-model quality come next.</p>
   <ol class="mt-12 space-y-4">
     {milestones.map((m) => (
       <li class="gradient-border flex gap-5 rounded-2xl p-6">

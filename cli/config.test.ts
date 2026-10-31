@@ -81,8 +81,8 @@ describe("agentCommand", () => {
 
 describe("budget settings", () => {
   test("reads the budget table", () => {
-    const config = parseConfig({ budget: { max_tokens_per_run: 5000, max_cost_usd_per_run: 0.5, max_retries: 1 } });
-    expect(config.budget).toEqual({ maxTokens: 5000, maxCostUsd: 0.5, maxRetries: 1 });
+    const config = parseConfig({ budget: { max_tokens_per_run: 5000, max_cost_usd_per_run: 0.5, max_retries: 1, timeout_seconds: 60 } });
+    expect(config.budget).toEqual({ maxTokens: 5000, maxCostUsd: 0.5, maxRetries: 1, timeoutSeconds: 60 });
   });
 
   test("uses defaults when the budget table is missing", () => {
