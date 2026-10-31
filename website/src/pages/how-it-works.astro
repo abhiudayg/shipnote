@@ -8,7 +8,7 @@ const stages = [
   { title: 'Draft', status: 'Working', body: 'The story goes to the agent you configure, with voice samples and facts from agent-brain. The agent returns structured JSON, and each run records the prompt and config hashes it used. Each call has a time limit, and the agent process is ended with its whole process group when that limit passes or you press Ctrl-C.' },
   { title: 'Validate', status: 'Working', body: 'Every cited SHA must exist in the dataset. Every named file, backticked identifier, or number of two or more digits must appear in the cited commits. Tweets must fit 280 characters. A tweet is dropped when more than 40% of its content words are missing from the commits it cites. A draft that repeats an approved post from the last 30 days is dropped. Claims that fail are logged in review.md.' },
   { title: 'Format for replies', status: 'Working', body: 'Each tweet is written without its link, and the commit links go under "Reply with," since links in the main post reduce reach. Nothing is posted by shipnote.' },
-  { title: 'Review and approve', status: 'In progress', body: 'You see each draft beside its evidence and approve, edit, or reject it, one key at a time. Nothing is marked used until you run the command that does so, and nothing posts automatically.' },
+  { title: 'Review and approve', status: 'Working', body: 'You see each draft beside its evidence. Step through the drafts with one key: a approves, r rejects, e edits, and s skips. Nothing is marked used until you run the command that does so, and nothing posts automatically.' },
 ];
 ---
 
