@@ -35,6 +35,20 @@ export function score(commit: Commit): number {
   return Number((0.6 * size + 0.2 * newFiles + 0.2 * quality).toFixed(3));
 }
 
+export function topicOf(commit: Commit): string {
+  return `${commit.repo}/${commit.files[0]?.split("/")[0] ?? ""}`;
+}
+
+export function representatives<T extends Commit>(ranked: T[]): T[] {
+  const seen = new Set<string>();
+  return ranked.filter((commit) => {
+    const topic = topicOf(commit);
+    if (seen.has(topic)) return false;
+    seen.add(topic);
+    return true;
+  });
+}
+
 export function select(commits: Commit[], rules: Rules): Selection {
   const selected: Selection["selected"] = [];
   const skipped: Skip[] = [];

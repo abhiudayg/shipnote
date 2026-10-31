@@ -24,19 +24,19 @@
     "note": "invented documentation claim cites a merge commit"
   },
   {
-    "text": "Export retry runs with backoff in production.",
+    "text": "Export retry runs 3 times with backoff in production.",
     "shas": ["1111111111111111111111111111111111111111"],
     "expect": "keep",
     "note": "known miss: a false word in the claim is one term of many, so the check passes it"
   },
   {
-    "text": "Export retry runs with backoff.",
+    "text": "Export retry runs 3 times with backoff.",
     "shas": ["1111111111111111111111111111111111111111"],
     "expect": "keep",
     "note": "supported: every content word appears in the cited commit"
   },
   {
-    "text": "Retries now run three times.",
+    "text": "Retries now run 3 times.",
     "shas": ["1111111111111111111111111111111111111111"],
     "expect": "keep",
     "note": "supported: the cited commit runs the retry loop"

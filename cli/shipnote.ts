@@ -2,7 +2,7 @@
 import { createHash } from "node:crypto";
 import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import { approve, decisionFor, draftIds, readApproved, unapprove, writeApproved, type Decision } from "./approval";
+import { approve, claimShas, decisionFor, draftIds, readApproved, unapprove, writeApproved, type Decision } from "./approval";
 import { importPatches } from "./archive";
 import { importDocs } from "./docs";
 import { checkBudget, estimateCostUsd, estimateTokens, type Budget } from "./budget";
@@ -17,7 +17,7 @@ import { BLOG_WORDS, buildPrompt, check, chooseMode, type Draft, MAX_TWEET_CHARS
 import { parsePatch, type Commit } from "./patch";
 import { writeDrafts, writeFailure, type RunMeta } from "./output";
 import { REPEAT_WINDOW_DAYS, type RecentPost } from "./similarity";
-import { select, type Rules } from "./select";
+import { representatives, select, type Rules } from "./select";
 import { withProgress } from "./progress";
 import { commandHelp, type CommandSpec, rootHelp } from "./help";
 import { debug, setVerbose } from "./log";
@@ -122,9 +122,16 @@ async function approveDraft(args: string[]): Promise<void> {
   if (!id) throw new Error("usage: shipnote approve <draft-id> [--date YYYY-MM-DD]");
   const date = flag(args, "--date") ?? today();
   const path = draftPath(date, "approved.json");
-  const approved = approve(readApproved(path), id, draftIds(claimItems(date)));
-  writeApproved(path, approved);
-  console.log(`approved ${id} for ${date}. Nothing was posted.`);
+  const items = claimItems(date);
+  writeApproved(path, approve(readApproved(path), id, draftIds(items)));
+  const shas = markClaimUsed(date, id);
+  console.log(`approved ${id} for ${date}; ${shas} commit(s) marked used. Nothing was posted.`);
+}
+
+function markClaimUsed(date: string, id: string): number {
+  const shas = claimShas(readClaims(date), id);
+  writeLedger(LEDGER, mergeLedger(readLedger(LEDGER), shas));
+  return shas.length;
 }
 
 async function markUsed(args: string[]): Promise<void> {
@@ -408,6 +415,7 @@ async function decideDrafts(date: string): Promise<void> {
     if (decision === "approve") {
       approved = approve(approved, id, ids);
       writeApproved(path, approved);
+      markClaimUsed(date, id);
     }
     if (decision === "reject") {
       approved = unapprove(approved, id);
@@ -476,7 +484,7 @@ function recentPosts(date: string): RecentPost[] {
 
 async function draftPosts(args: string[]): Promise<void> {
   const date = flag(args, "--date") ?? today();
-  const top = Number(flag(args, "--top") ?? 5);
+  const top = Number(flag(args, "--top") ?? 12);
   const config = loadConfig(CONFIG);
   const provider = resolvedProvider(config);
   const dir = join(DRAFTS, date);
@@ -504,8 +512,9 @@ async function draftPosts(args: string[]): Promise<void> {
   }
   const { selected, skipped } = select(commits, currentRules(config));
   const mode = chooseMode(selected[0]?.score, config.minStoryScore);
-  const chosen = mode === "story" ? selected.slice(0, top) : selected.slice(0, THEME_EXAMPLES);
-  debug(`mode ${mode}: drafting ${chosen.length} of ${selected.length} selected commits`);
+  const candidates = representatives(selected);
+  const chosen = mode === "story" ? candidates.slice(0, top) : candidates.slice(0, THEME_EXAMPLES);
+  debug(`mode ${mode}: drafting ${chosen.length} of ${candidates.length} topics from ${selected.length} selected commits`);
   if (chosen.length === 0) {
     fail("No commits passed selection, so there is nothing to draft.");
     return;
@@ -643,7 +652,7 @@ const COMMANDS: Record<string, CommandSpec & { run: (args: string[]) => Promise<
     usage: "draft [--date YYYY-MM-DD] [--top N]",
     options: [
       ["--date YYYY-MM-DD", "Day to draft (default: today in IST)"],
-      ["--top N", "Commits to draft from in story mode (default: 5)"],
+      ["--top N", "Topics to draft from in story mode, one commit per topic (default: 12)"],
     ],
     run: draftPosts,
   },

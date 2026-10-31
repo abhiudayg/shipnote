@@ -59,7 +59,7 @@ describe("parseDraft", () => {
 
 describe("check", () => {
   test("keeps a tweet that cites a known commit", () => {
-    const draft: Draft = { tweets: [{ text: "Retries now run three times.", shas: [retrySha] }], blog: null };
+    const draft: Draft = { tweets: [{ text: "Retries now run 3 times.", shas: [retrySha] }], blog: null };
     const result = check(draft, commits);
     expect(result.draft.tweets).toHaveLength(1);
   });
@@ -87,7 +87,7 @@ describe("check", () => {
   });
 
   test("keeps at most three tweets", () => {
-    const tweet = { text: "Retry.", shas: [retrySha] };
+    const tweet = { text: "Retry 3 times.", shas: [retrySha] };
     const result = check({ tweets: [tweet, tweet, tweet, tweet], blog: null }, commits);
     expect(result.draft.tweets).toHaveLength(3);
   });
@@ -147,12 +147,12 @@ describe("grounding", () => {
   });
 
   test("keeps prose whose content words appear in the cited commit", () => {
-    const draft: Draft = { tweets: [{ text: "Export retry runs with backoff.", shas: [retrySha] }], blog: null };
+    const draft: Draft = { tweets: [{ text: "Export retry runs 3 times with backoff.", shas: [retrySha] }], blog: null };
     expect(check(draft, commits).draft.tweets).toHaveLength(1);
   });
 
   test("drops prose whose content words are mostly absent from the cited commit", () => {
-    const draft: Draft = { tweets: [{ text: "Adds blockchain audit ledger with quantum encryption.", shas: [retrySha] }], blog: null };
+    const draft: Draft = { tweets: [{ text: "Adds blockchain audit ledger with quantum encryption in 3 steps.", shas: [retrySha] }], blog: null };
     const result = check(draft, commits);
     expect(result.draft.tweets).toHaveLength(0);
     expect(result.rejections[0].reason).toContain("content words are not in the cited commits");
@@ -168,14 +168,14 @@ describe("repeats", () => {
   const recent = [{ date: "2026-10-30", id: "tweet-1", text: "Retries now run three times on failure." }];
 
   test("drops a draft that repeats a recent approved post", () => {
-    const draft: Draft = { tweets: [{ text: "Retries now run three times.", shas: [retrySha] }], blog: null };
+    const draft: Draft = { tweets: [{ text: "Retries now run 3 times.", shas: [retrySha] }], blog: null };
     const result = check(draft, commits, recent);
     expect(result.draft.tweets).toHaveLength(0);
     expect(result.rejections[0].reason).toBe("repeats 2026-10-30 tweet-1");
   });
 
   test("keeps a draft on an unrelated topic", () => {
-    const draft: Draft = { tweets: [{ text: "Export retry runs with backoff.", shas: [retrySha] }], blog: null };
+    const draft: Draft = { tweets: [{ text: "Export retry runs 3 times with backoff.", shas: [retrySha] }], blog: null };
     expect(check(draft, commits, recent).draft.tweets).toHaveLength(1);
   });
 });
@@ -196,6 +196,37 @@ describe("sourceWords", () => {
   test("is below the blog minimum for a single short document", () => {
     const short = { ...commits[0], subject: "Note", body: "", diff: "+A short note." };
     expect(sourceWords([short])).toBeLessThan(BLOG_WORDS.min);
+  });
+});
+
+describe("quality gate", () => {
+  const tweetWith = (text: string): Draft => ({ tweets: [{ text, shas: [retrySha] }], blog: null });
+
+  test("drops a tweet that uses a hype word", () => {
+    const result = check(tweetWith("Retries now run 3 times, and the feature is seamless."), commits);
+    expect(result.rejections[0].reason).toContain("seamless");
+  });
+
+  test("drops a tweet whose first sentence is over 25 words", () => {
+    const long = `${Array.from({ length: 26 }, () => "word").join(" ")} runs 3 times.`;
+    expect(check(tweetWith(long), commits).rejections[0].reason).toContain("first sentence has 29 words");
+  });
+
+  test("keeps a long later sentence when the first sentence is short", () => {
+    const later = `Retries run 3 times. ${Array.from({ length: 30 }, () => "word").join(" ")}.`;
+    const reasons = check(tweetWith(later), commits).rejections.map((rejection) => rejection.reason);
+    expect(reasons.join(" ")).not.toContain("first sentence");
+  });
+
+  test("drops a tweet that names no file, command, or number", () => {
+    expect(check(tweetWith("Retries now run more often."), commits).rejections[0].reason).toBe(
+      "names no file, command, or number",
+    );
+  });
+
+  test("drops a blog that uses a hype word", () => {
+    const result = check({ tweets: [], blog: blog([retrySha], `${longBody} very`) }, commits);
+    expect(result.rejections[0].reason).toContain("very");
   });
 });
 

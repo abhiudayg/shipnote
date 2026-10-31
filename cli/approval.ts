@@ -9,6 +9,12 @@ export function approve(approved: string[], id: string, ids: string[]): string[]
   return approved.includes(id) ? approved : [...approved, id];
 }
 
+export function claimShas(claims: Array<{ item: string; commits: Array<{ sha: string }> }>, id: string): string[] {
+  return claims
+    .filter((claim) => draftIds([claim.item])[0] === id)
+    .flatMap((claim) => claim.commits.map((commit) => commit.sha));
+}
+
 export function unapprove(approved: string[], id: string): string[] {
   return approved.filter((item) => item !== id);
 }

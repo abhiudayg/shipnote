@@ -20,6 +20,10 @@ export const RUBRIC = {
 };
 
 const DIFF_CHARS = 2500;
+export const HYPE_WORDS = ["very", "really", "incredibly", "seamless", "game-changer", "excited", "exciting"];
+const HYPE = new RegExp(`\\b(${HYPE_WORDS.join("|")})\\b`, "i");
+const MAX_FIRST_SENTENCE_WORDS = 25;
+const CONCRETE = /`[^`\n]+`|\b[\w.-]+\.(?:ts|tsx|js|jsx|md|json|toml|yml|yaml|sh|go|rs|py|sql|css|html|svg)\b|\d/;
 export const SECRET = /ghp_[A-Za-z0-9]{20,}|AKIA[0-9A-Z]{16}|-----BEGIN [A-Z ]*PRIVATE KEY-----|sk_live_[A-Za-z0-9]{16,}/;
 
 export type Mode = "story" | "theme";
@@ -50,7 +54,7 @@ export function buildPrompt(commits: Commit[], mode: Mode, voice: string): strin
     `The blog is one post of ${BLOG_WORDS.min} to ${BLOG_WORDS.max} words.`,
     "Every tweet and the blog must list the full SHA of each commit it describes in its shas field. Do not put SHAs in the text. Do not quote diffs verbatim. Claim only what the commit shows.",
     "Write like a working engineer explaining a change to a colleague: plain, direct, and specific. Put the concrete result first, in active voice with a named actor. Use the exact file, command, flag, number, or behavior from the diff. Keep each sentence under 25 words, with one claim per sentence.",
-    "Cut filler and hype such as very, really, incredibly, seamless, game-changer, excited, and exciting. Do not announce what follows; state it. If the diff shows what the change does not cover, say so.",
+    `Cut filler and hype such as ${HYPE_WORDS.join(", ")}. Do not announce what follows; state it. If the diff shows what the change does not cover, say so.`,
     style,
     ...blocks,
   ]
@@ -161,11 +165,30 @@ function wordCount(text: string): number {
   return text.split(/\s+/).filter(Boolean).length;
 }
 
+function hypeProblem(text: string): string | null {
+  const hype = HYPE.exec(text);
+  return hype ? `uses the hype word "${hype[0]}"` : null;
+}
+
+function firstSentence(text: string): string {
+  return text.split(/(?<=[.!?])\s+/)[0] ?? text;
+}
+
+function qualityProblem(text: string): string | null {
+  const hype = hypeProblem(text);
+  if (hype) return hype;
+  const words = wordCount(firstSentence(text));
+  if (words > MAX_FIRST_SENTENCE_WORDS) return `first sentence has ${words} words, over ${MAX_FIRST_SENTENCE_WORDS}`;
+  return CONCRETE.test(text) ? null : "names no file, command, or number";
+}
+
 function tweetProblem(tweet: Tweet, known: KnownCommits, recent: RecentPost[]): string | null {
   const cites = citesKnown(tweet.shas, known);
   if (cites) return cites;
   if (tweet.text.length > MAX_TWEET_CHARS) return `${tweet.text.length} characters, over ${MAX_TWEET_CHARS}`;
   if (SECRET.test(tweet.text)) return "matches a secret pattern";
+  const quality = qualityProblem(tweet.text);
+  if (quality) return quality;
   const cited = citedBy(tweet.shas, known);
   return ungrounded(tweet.text, cited) ?? unsupportedProse(tweet.text, cited) ?? repeated(tweet.text, recent);
 }
@@ -179,6 +202,8 @@ function blogProblem(blog: Blog, known: KnownCommits, recent: RecentPost[]): str
   }
   const text = `${blog.title}\n${blog.summary}\n${blog.body}`;
   if (SECRET.test(text)) return "matches a secret pattern";
+  const hype = hypeProblem(text);
+  if (hype) return hype;
   return ungrounded(text, citedBy(blog.shas, known)) ?? repeated(`${blog.title} ${blog.summary}`, recent);
 }
 
