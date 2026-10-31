@@ -7,6 +7,7 @@
     "type": "git",
     "url": "git+https://github.com/abhiudayg/shipnote.git"
   },
+  "license": "MIT",
   "type": "module",
   "bin": {
     "shipnote": "cli/shipnote.ts"
