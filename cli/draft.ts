@@ -1,6 +1,6 @@
 import { createHash } from "node:crypto";
 import type { Commit } from "./patch";
-import { findRepeat, REPEAT_OVERLAP, REPEAT_WINDOW_DAYS, type RecentPost } from "./similarity";
+import { findRepeat, REPEAT_OVERLAP, REPEAT_WINDOW_DAYS, type RecentPost, tokens } from "./similarity";
 
 export type Tweet = { text: string; shas: string[] };
 export type Blog = { title: string; summary: string; body: string; shas: string[] };
@@ -126,6 +126,26 @@ function ungrounded(text: string, cited: Commit[]): string | null {
   return missing === undefined ? null : `names ${missing}, which is not in the cited commits`;
 }
 
+const PROSE_MISS_LIMIT = 0.4;
+const PROSE_GENERIC = new Set(["brings", "lands", "ships", "shipped", "today", "update", "updates", "feature", "features", "better", "faster", "simpler", "improves", "improved", "across", "through", "within", "instead", "every", "other", "their", "about"]);
+
+function stem(word: string): string {
+  return word.replace(/(ing|ed|es|s)$/, "");
+}
+
+function proseTerms(text: string): string[] {
+  return [...tokens(text)].filter((word) => word.length >= 5 && !PROSE_GENERIC.has(word)).map(stem);
+}
+
+function unsupportedProse(text: string, cited: Commit[]): string | null {
+  const terms = proseTerms(text);
+  if (terms.length === 0) return null;
+  const corpus = new Set(cited.flatMap((commit) => [...proseTerms(evidence(commit)), ...tokens(evidence(commit))].map(stem)));
+  const missing = terms.filter((term) => !corpus.has(term));
+  if (missing.length / terms.length <= PROSE_MISS_LIMIT) return null;
+  return `${missing.length} of ${terms.length} content words are not in the cited commits (${missing.slice(0, 3).join(", ")})`;
+}
+
 function repeated(text: string, recent: RecentPost[]): string | null {
   const repeat = findRepeat(text, recent);
   return repeat ? `repeats ${repeat.date} ${repeat.id}` : null;
@@ -144,7 +164,8 @@ function tweetProblem(tweet: Tweet, known: KnownCommits, recent: RecentPost[]): 
   if (cites) return cites;
   if (tweet.text.length > MAX_TWEET_CHARS) return `${tweet.text.length} characters, over ${MAX_TWEET_CHARS}`;
   if (SECRET.test(tweet.text)) return "matches a secret pattern";
-  return ungrounded(tweet.text, citedBy(tweet.shas, known)) ?? repeated(tweet.text, recent);
+  const cited = citedBy(tweet.shas, known);
+  return ungrounded(tweet.text, cited) ?? unsupportedProse(tweet.text, cited) ?? repeated(tweet.text, recent);
 }
 
 function blogProblem(blog: Blog, known: KnownCommits, recent: RecentPost[]): string | null {

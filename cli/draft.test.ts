@@ -138,6 +138,18 @@ describe("grounding", () => {
     expect(check(draft, commits).draft.tweets).toHaveLength(0);
   });
 
+  test("keeps prose whose content words appear in the cited commit", () => {
+    const draft: Draft = { tweets: [{ text: "Export retry runs with backoff.", shas: [retrySha] }], blog: null };
+    expect(check(draft, commits).draft.tweets).toHaveLength(1);
+  });
+
+  test("drops prose whose content words are mostly absent from the cited commit", () => {
+    const draft: Draft = { tweets: [{ text: "Adds blockchain audit ledger with quantum encryption.", shas: [retrySha] }], blog: null };
+    const result = check(draft, commits);
+    expect(result.draft.tweets).toHaveLength(0);
+    expect(result.rejections[0].reason).toContain("content words are not in the cited commits");
+  });
+
   test("names a file the commit did not touch as ungrounded", () => {
     const draft: Draft = { tweets: [{ text: "Edits cli/secret.ts today.", shas: [retrySha] }], blog: null };
     expect(check(draft, commits).rejections[0].reason).toContain("cli/secret.ts");
@@ -155,7 +167,7 @@ describe("repeats", () => {
   });
 
   test("keeps a draft on an unrelated topic", () => {
-    const draft: Draft = { tweets: [{ text: "Dark mode ships for the dashboard.", shas: [retrySha] }], blog: null };
+    const draft: Draft = { tweets: [{ text: "Export retry runs with backoff.", shas: [retrySha] }], blog: null };
     expect(check(draft, commits, recent).draft.tweets).toHaveLength(1);
   });
 });
