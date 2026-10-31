@@ -13,7 +13,7 @@ import { recallFacts, runCommand } from "./recall";
 import { score } from "./select";
 import { agentCommand, loadConfig, type Config, type Provider } from "./config";
 import { mergeLedger, readLedger, validateShas, writeLedger } from "./ledger";
-import { buildPrompt, check, chooseMode, type Draft, MAX_TWEET_CHARS, parseDraft, promptSha256 } from "./draft";
+import { BLOG_WORDS, buildPrompt, check, chooseMode, type Draft, MAX_TWEET_CHARS, parseDraft, promptSha256, sourceWords } from "./draft";
 import { parsePatch, type Commit } from "./patch";
 import { writeDrafts, writeFailure, type RunMeta } from "./output";
 import { REPEAT_WINDOW_DAYS, type RecentPost } from "./similarity";
@@ -508,6 +508,11 @@ async function draftPosts(args: string[]): Promise<void> {
   debug(`mode ${mode}: drafting ${chosen.length} of ${selected.length} selected commits`);
   if (chosen.length === 0) {
     fail("No commits passed selection, so there is nothing to draft.");
+    return;
+  }
+  const words = sourceWords(chosen);
+  if (mode === "theme" && words < BLOG_WORDS.min) {
+    fail(`The sources hold ${words} words, fewer than the ${BLOG_WORDS.min}-word minimum for a theme blog, so the blog would be padded. No agent call was made.`);
     return;
   }
 

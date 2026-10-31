@@ -14,6 +14,7 @@ Each release's notes are taken from its section below, so write entries for what
 ### Changed
 
 - Each tweet opens with a hook in its first sentence: a result, a number from the diff, or a question.
+- A theme-mode blog is not drafted when its sources hold fewer than 600 words. The run writes `review.md` and makes no agent call, so a thin set of documents is not padded.
 
 ## [0.3.0] - 2026-10-31
 

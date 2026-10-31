@@ -208,6 +208,10 @@ export function check(draft: Draft, commits: Commit[], recent: RecentPost[] = []
   return { draft: { tweets, blog }, rejections };
 }
 
+export function sourceWords(commits: Commit[]): number {
+  return commits.reduce((total, commit) => total + wordCount(`${commit.subject} ${commit.body} ${commit.diff}`), 0);
+}
+
 export function chooseMode(topScore: number | undefined, minStoryScore: number): Mode {
   return (topScore ?? 0) >= minStoryScore ? "story" : "theme";
 }

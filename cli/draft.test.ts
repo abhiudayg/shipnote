@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import { readFileSync } from "node:fs";
-import { buildPrompt, check, chooseMode, parseDraft, promptSha256, type Draft } from "./draft";
+import { BLOG_WORDS, buildPrompt, check, chooseMode, parseDraft, promptSha256, sourceWords, type Draft } from "./draft";
 import { parsePatch } from "./patch";
 
 const commits = parsePatch(readFileSync(new URL("./fixtures/sample.patch", import.meta.url), "utf8"), "abhiudayg/dustmap");
@@ -180,6 +180,18 @@ describe("promptSha256", () => {
   test("is a stable SHA-256 of the prompt template", () => {
     expect(promptSha256()).toMatch(/^[0-9a-f]{64}$/);
     expect(promptSha256()).toBe(promptSha256());
+  });
+});
+
+describe("sourceWords", () => {
+  test("counts the words in each commit's subject, body, and diff", () => {
+    const source = { ...commits[0], subject: "One two", body: "three", diff: "four five" };
+    expect(sourceWords([source])).toBe(5);
+  });
+
+  test("is below the blog minimum for a single short document", () => {
+    const short = { ...commits[0], subject: "Note", body: "", diff: "+A short note." };
+    expect(sourceWords([short])).toBeLessThan(BLOG_WORDS.min);
   });
 });
 
