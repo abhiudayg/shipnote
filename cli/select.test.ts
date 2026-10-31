@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import { readFileSync } from "node:fs";
 import { parsePatch } from "./patch";
-import { type Rules, representatives, score, select, topicOf } from "./select";
+import { type Rules, representatives, score, select, topicKey, topicOf } from "./select";
 
 const sample = parsePatch(readFileSync(new URL("./fixtures/sample.patch", import.meta.url), "utf8"), "abhiudayg/dustmap");
 const retrySha = "1111111111111111111111111111111111111111";
@@ -92,5 +92,21 @@ describe("representatives", () => {
 
   test("names a topic by repo and top-level folder", () => {
     expect(topicOf(commit("a", "o/r", "cli/x.ts"))).toBe("o/r/cli");
+  });
+});
+
+describe("topicKey", () => {
+  test("matches the topic a commit is grouped under", () => {
+    expect(topicKey("o/r", ["cli/x.ts"])).toBe("o/r/cli");
+  });
+});
+
+describe("topicKey area", () => {
+  test("uses the folder that most of the commit's files are in", () => {
+    expect(topicKey("o/r", [".github/ci.yml", "internal/a.go", "internal/b.go"])).toBe("o/r/internal");
+  });
+
+  test("breaks ties by folder name", () => {
+    expect(topicKey("o/r", ["b/x.go", "a/y.go"])).toBe("o/r/a");
   });
 });

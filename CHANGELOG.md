@@ -10,6 +10,8 @@ Each release's notes are taken from its section below, so write entries for what
 
 - Approving a draft marks its commits as used, so they are not selected again. This applies to `approve` and to `review --decide`.
 - A quality gate drops a tweet whose first sentence is over 25 words, that uses a hype word, or that names no file, command, or number.
+- Rejecting an approved draft in `review --decide` releases its commits, unless another approved draft still uses them.
+- Drafting skips a topic that an approved post in the last 30 days already covers, so new work in that folder is not repeated.
 
 ### Changed
 

@@ -12,12 +12,12 @@ import { importCorpus, storeFact } from "./memory";
 import { recallFacts, runCommand } from "./recall";
 import { score } from "./select";
 import { agentCommand, loadConfig, type Config, type Provider } from "./config";
-import { mergeLedger, readLedger, validateShas, writeLedger } from "./ledger";
+import { mergeLedger, readLedger, releaseShas, validateShas, writeLedger } from "./ledger";
 import { BLOG_WORDS, buildPrompt, check, chooseMode, type Draft, MAX_TWEET_CHARS, parseDraft, promptSha256, sourceWords } from "./draft";
 import { parsePatch, type Commit } from "./patch";
 import { writeDrafts, writeFailure, type RunMeta } from "./output";
 import { REPEAT_WINDOW_DAYS, type RecentPost } from "./similarity";
-import { representatives, select, type Rules } from "./select";
+import { representatives, select, topicKey, topicOf, type Rules } from "./select";
 import { withProgress } from "./progress";
 import { commandHelp, type CommandSpec, rootHelp } from "./help";
 import { debug, setVerbose } from "./log";
@@ -418,8 +418,10 @@ async function decideDrafts(date: string): Promise<void> {
       markClaimUsed(date, id);
     }
     if (decision === "reject") {
+      const wasApproved = approved.includes(id);
       approved = unapprove(approved, id);
       writeApproved(path, approved);
+      if (wasApproved) releaseClaim(date, id);
     }
     if (decision === "edit") await editClaim(date, claim);
   }
@@ -468,18 +470,41 @@ function shiftDays(date: string, days: number): string {
   return shifted.toISOString().slice(0, 10);
 }
 
-function recentPosts(date: string): RecentPost[] {
+function draftDays(): string[] {
   if (!existsSync(DRAFTS)) return [];
+  return readdirSync(DRAFTS).filter(isDate);
+}
+
+function approvedClaims(day: string): Claim[] {
+  const approved = readApproved(draftPath(day, "approved.json"));
+  return readClaims(day).filter((claim) => approved.includes(draftIds([claim.item])[0]));
+}
+
+function recentDays(date: string): string[] {
   const cutoff = shiftDays(date, -REPEAT_WINDOW_DAYS);
-  return readdirSync(DRAFTS)
-    .filter((day) => isDate(day) && day >= cutoff && day < date)
-    .flatMap((day) => {
-      const approved = readApproved(draftPath(day, "approved.json"));
-      return readClaims(day).flatMap((claim) => {
-        const id = draftIds([claim.item])[0];
-        return approved.includes(id) ? [{ date: day, id, text: claim.text }] : [];
-      });
-    });
+  return draftDays().filter((day) => day >= cutoff && day < date);
+}
+
+function recentPosts(date: string): RecentPost[] {
+  return recentDays(date).flatMap((day) =>
+    approvedClaims(day).map((claim) => ({ date: day, id: draftIds([claim.item])[0], text: claim.text })),
+  );
+}
+
+function recentTopics(date: string): Set<string> {
+  return new Set(
+    recentDays(date).flatMap((day) =>
+      approvedClaims(day).flatMap((claim) => claim.commits.map((commit) => topicKey(commit.repo ?? "", commit.files))),
+    ),
+  );
+}
+
+function releaseClaim(date: string, id: string): void {
+  const released = claimShas(readClaims(date), id);
+  const stillApproved = draftDays().flatMap((day) =>
+    approvedClaims(day).flatMap((claim) => claim.commits.map((commit) => commit.sha)),
+  );
+  writeLedger(LEDGER, releaseShas(readLedger(LEDGER), released, stillApproved));
 }
 
 async function draftPosts(args: string[]): Promise<void> {
@@ -512,7 +537,8 @@ async function draftPosts(args: string[]): Promise<void> {
   }
   const { selected, skipped } = select(commits, currentRules(config));
   const mode = chooseMode(selected[0]?.score, config.minStoryScore);
-  const candidates = representatives(selected);
+  const blocked = recentTopics(date);
+  const candidates = representatives(selected).filter((commit) => !blocked.has(topicOf(commit)));
   const chosen = mode === "story" ? candidates.slice(0, top) : candidates.slice(0, THEME_EXAMPLES);
   debug(`mode ${mode}: drafting ${chosen.length} of ${candidates.length} topics from ${selected.length} selected commits`);
   if (chosen.length === 0) {
