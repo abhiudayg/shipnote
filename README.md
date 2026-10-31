@@ -274,4 +274,4 @@ The website's [roadmap page](https://shipnote.abhiudayg.dev/roadmap/) has the mi
 
 ## License
 
-No license is set yet.
+MIT. See [LICENSE](LICENSE).

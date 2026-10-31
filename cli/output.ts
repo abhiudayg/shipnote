@@ -29,14 +29,14 @@ const GENERATED = ["review.md", "tweets.md", "blog.md", "sources.json", "linkedi
 function tweetsMarkdown(result: Checked, commits: Commit[], date: string): string {
   const byHash = new Map(commits.map((c) => [c.sha, c]));
   const sections = result.draft.tweets.map((tweet, index) => {
-    const sources = tweet.shas.map((sha) => {
+    const links = tweet.shas.map((sha) => {
       const commit = byHash.get(sha);
-      return commit ? `- ${sha.slice(0, 7)} ${commit.repo}: ${commitUrl(commit.repo, sha)}` : `- ${sha}`;
+      return commit ? commitUrl(commit.repo, sha) : sha;
     });
-    return [`## Tweet ${index + 1}`, "", tweet.text, "", "Sources:", ...sources].join("\n");
+    return [`## Tweet ${index + 1}`, "", tweet.text, "", "Reply with:", ...links].join("\n");
   });
   const body = sections.length > 0 ? sections.join("\n\n") : "No tweet passed validation.";
-  return `# Tweets for ${date}\n\n${body}\n`;
+  return `# Tweets for ${date}\n\nPost each tweet without its link. Add the links as a reply, since links in the main post reduce reach.\n\n${body}\n`;
 }
 
 function blogMarkdown(result: Checked, date: string, mode: Mode): string {

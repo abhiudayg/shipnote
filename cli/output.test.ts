@@ -62,6 +62,12 @@ describe("writeDrafts", () => {
     expect(recorded).toMatchObject({ kept: 1, costPerKeptUsd: 0.5, rubric: { maxTweets: 3, maxTweetChars: 280 } });
   });
 
+  test("puts each commit link in a reply, not in the tweet text", () => {
+    writeDrafts(dir, result, commits, { date: "2026-10-31", mode: "story", selected: 1, skipped: 0, meta });
+    const tweets = readFileSync(join(dir, "tweets.md"), "utf8");
+    expect(tweets).toContain("Retries now run.\n\nReply with:\nhttps://github.com/abhiudayg/dustmap/commit/1111111111111111111111111111111111111111");
+  });
+
   test("keeps approvals when a draft is rewritten", () => {
     writeFileSync(join(dir, "approved.json"), '["tweet-1"]\n');
     writeDrafts(dir, result, commits, { date: "2026-10-31", mode: "story", selected: 1, skipped: 0, meta });

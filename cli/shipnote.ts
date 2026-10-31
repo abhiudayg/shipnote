@@ -33,7 +33,7 @@ const repo = process.env.SHIPNOTE_REPO ?? "abhiudayg/shipnote";
 function currentRules(config: Config): Rules {
   const envRepos = (process.env.SHIPNOTE_DENYLIST ?? "").split(",").filter(Boolean);
   return {
-    used: loadLedger(),
+    used: new Set(readLedger(LEDGER)),
     denylistRepos: new Set([...config.denylistRepos, ...envRepos]),
     denylistTerms: config.denylistTerms,
   };
@@ -92,10 +92,6 @@ async function loadCommits(dir: string): Promise<Commit[]> {
   return commits;
 }
 
-function loadLedger(): Set<string> {
-  return new Set(readLedger(LEDGER));
-}
-
 const VALUE_FLAGS = ["--date", "--tag", "--source"];
 
 function positionals(args: string[]): string[] {
@@ -107,10 +103,8 @@ function draftPath(date: string, file: string): string {
 }
 
 function claimItems(date: string): string[] {
-  const path = draftPath(date, "sources.json");
-  if (!existsSync(path)) throw new Error(`no drafts for ${date}; run "shipnote draft --date ${date}" first`);
-  const sources = JSON.parse(readFileSync(path, "utf8")) as { claims: Array<{ item: string }> };
-  return sources.claims.map((claim) => claim.item);
+  if (!existsSync(draftPath(date, "sources.json"))) throw new Error(`no drafts for ${date}; run "shipnote draft --date ${date}" first`);
+  return readClaims(date).map((claim) => claim.item);
 }
 
 async function approveDraft(args: string[]): Promise<void> {
@@ -401,11 +395,6 @@ async function editClaim(date: string, claim: Claim): Promise<void> {
   await Bun.spawn([command, ...flags, draftPath(date, file)], { stdin: "inherit", stdout: "inherit", stderr: "inherit" }).exited;
 }
 
-async function reviewAll(args: string[]): Promise<void> {
-  if (args.includes("--decide")) return decideDrafts(flag(args, "--date") ?? today());
-  return reviewDrafts(args);
-}
-
 async function showStats(): Promise<void> {
   const days = existsSync(DRAFTS) ? readdirSync(DRAFTS).filter(isDate) : [];
   let items = 0;
@@ -571,18 +560,18 @@ const commands: Record<string, (args: string[]) => Promise<void>> = {
   "import-voice": importVoice,
   select: selectCommits,
   draft: draftPosts,
+  media: hookMedia,
+  review: (args) => (args.includes("--decide") ? decideDrafts(flag(args, "--date") ?? today()) : reviewDrafts(args)),
   approve: approveDraft,
   "mark-used": markUsed,
   status: showStatus,
-  review: reviewAll,
   stats: showStats,
-  media: hookMedia,
   "eval-add": evalAdd,
   eval: runEval,
 };
 
 if (!command || !commands[command]) {
-  console.log("usage: shipnote <fetch|import|remember|import-voice|select|draft|media|review|approve|mark-used|status|stats|eval-add|eval> [--date YYYY-MM-DD] [--run ID] [--top N]");
+  console.log(`usage: shipnote <${Object.keys(commands).join("|")}> [--date YYYY-MM-DD] [--run ID] [--top N]`);
   process.exit(command ? 1 : 0);
 }
 

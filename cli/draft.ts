@@ -140,7 +140,7 @@ function proseTerms(text: string): string[] {
 function unsupportedProse(text: string, cited: Commit[]): string | null {
   const terms = proseTerms(text);
   if (terms.length === 0) return null;
-  const corpus = new Set(cited.flatMap((commit) => [...proseTerms(evidence(commit)), ...tokens(evidence(commit))].map(stem)));
+  const corpus = new Set(cited.flatMap((commit) => [...tokens(evidence(commit))].map(stem)));
   const missing = terms.filter((term) => !corpus.has(term));
   if (missing.length / terms.length <= PROSE_MISS_LIMIT) return null;
   return `${missing.length} of ${terms.length} content words are not in the cited commits (${missing.slice(0, 3).join(", ")})`;
