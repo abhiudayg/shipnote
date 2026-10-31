@@ -5,7 +5,7 @@ const repo = 'https://github.com/abhiudayg/shipnote';
 const modules = [
   { stage: 'Dataset', status: 'Working', title: 'Nightly export', body: 'Public commits and full diffs from the last 30 days, built by a scheduled GitHub Action.' },
   { stage: 'Select', status: 'Working', title: 'Ranked commits', body: 'Merges, lockfile-only changes, and used commits are skipped. The rest are ranked by change and message quality.' },
-  { stage: 'Draft', status: 'In progress', title: 'Grounded drafts', body: 'Tweets and blog drafts that cite commit SHAs. Claims that name something missing from the cited commits are removed.' },
+  { stage: 'Draft', status: 'Working', title: 'Grounded drafts', body: 'Tweets and blog drafts that cite commit SHAs. Claims that name something missing from the cited commits are removed, and tweets whose wording is mostly unsupported are dropped.' },
   { stage: 'Review', status: 'Working', title: 'You approve', body: 'Each draft sits beside its evidence. Step through the drafts with one key: a approves, r rejects, e edits, and s skips. Nothing posts automatically.' },
 ];
 
@@ -14,8 +14,8 @@ const features = [
   { title: 'No auto-posting', body: 'shipnote has no posting code. Drafts are files, and you decide what happens next.', badge: 'By design', size: '' },
   { title: 'Runs on your account', body: 'The nightly job reads the account from the repository owner. A fork needs two settings and one run.', badge: 'Fork and run', size: '' },
   { title: 'Secrets scanned before upload', body: 'Gitleaks, pinned to a version, scans the dataset. A finding fails the run before anything is uploaded.', badge: 'Working', size: 'md:col-span-2' },
-  { title: 'Your voice, not a generic one', body: 'Drafts are checked against your past posts, stored as facts in agent-brain, so the tone matches how you already write.', badge: 'In progress', size: '' },
-  { title: 'Repeat checks', body: 'A draft that repeats an approved post from the last 30 days is removed before it reaches review.', badge: 'In progress', size: '' },
+  { title: 'Your voice, not a generic one', body: 'Drafts are checked against your past posts, stored as facts in agent-brain, so the tone matches how you already write.', badge: 'Working', size: '' },
+  { title: 'Repeat checks', body: 'A draft that repeats an approved post from the last 30 days is removed before it reaches review.', badge: 'Working', size: '' },
 ];
 
 const steps = [
