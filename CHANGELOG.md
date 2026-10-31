@@ -8,6 +8,8 @@ Each release's notes are taken from its section below, so write entries for what
 
 ### Added
 
+- `remember "<text>"` command that stores one voice fact in agent-brain. Optional `--tag` (default `voice_tag`) and `--source` (default `manual`). Text that matches a secret pattern is refused.
+- `import-voice [dir]` command that stores each paragraph of a folder of Markdown files (default `voice/`) in agent-brain under the voice tag. Re-importing the same folder stores nothing new.
 - `approve`, `mark-used`, and `status` commands. Approving a draft records its id and posts nothing. Marking commits used writes `ledger.json`.
 - `shipnote.toml` support for the agent provider, model, command template, denylist, and budget limits.
 - `review` command that shows each draft with its approval state, its length, and the commit evidence behind it.

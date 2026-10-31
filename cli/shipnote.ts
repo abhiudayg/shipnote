@@ -5,6 +5,7 @@ import { importPatches } from "./archive";
 import { checkBudget, estimateCostUsd, estimateTokens } from "./budget";
 import { altText, BLOG_SIZE, excerptCard, excerptMatchesDiff, firstExcerpt, TWEET_SIZE } from "./media";
 import { evaluateCase, type EvalCase, summarize } from "./eval";
+import { importCorpus, storeFact } from "./memory";
 import { recallFacts, runCommand } from "./recall";
 import { score } from "./select";
 import { agentCommand, loadConfig, type Config, type Provider } from "./config";
@@ -92,8 +93,10 @@ function loadLedger(): Set<string> {
   return new Set(readLedger(LEDGER));
 }
 
+const VALUE_FLAGS = ["--date", "--tag", "--source"];
+
 function positionals(args: string[]): string[] {
-  return args.filter((arg, index) => !arg.startsWith("--") && !(index > 0 && args[index - 1] === "--date"));
+  return args.filter((arg, index) => !arg.startsWith("--") && !(index > 0 && VALUE_FLAGS.includes(args[index - 1])));
 }
 
 function draftPath(date: string, file: string): string {
@@ -398,11 +401,29 @@ async function importArchive(args: string[]): Promise<void> {
   console.log(`imported ${copied.length} patch file(s) into ${destination}`);
 }
 
+async function rememberFact(args: string[]): Promise<void> {
+  const [text] = positionals(args);
+  if (!text) throw new Error('usage: shipnote remember "<text>" [--tag TAG] [--source SOURCE]');
+  const tag = flag(args, "--tag") ?? loadConfig(CONFIG).voiceTag;
+  const source = flag(args, "--source") ?? "manual";
+  const stored = await storeFact(runCommand, text, tag, source);
+  console.log(stored.deduplicated ? `already stored as ${stored.id}` : `stored ${stored.id}`);
+}
+
+async function importVoice(args: string[]): Promise<void> {
+  const [dir = VOICE_DIR] = positionals(args);
+  const report = await importCorpus(runCommand, dir, loadConfig(CONFIG).voiceTag);
+  const refused = report.rejected_secret + report.rejected_too_long;
+  console.log(`read ${report.paragraphs} paragraph(s) from ${report.files} file(s): stored ${report.stored}, already stored ${report.deduplicated}, refused ${refused}`);
+}
+
 const [command, ...args] = process.argv.slice(2);
 
 const commands: Record<string, (args: string[]) => Promise<void>> = {
   fetch: fetchDataset,
   import: importArchive,
+  remember: rememberFact,
+  "import-voice": importVoice,
   select: selectCommits,
   draft: draftPosts,
   approve: approveDraft,
@@ -415,7 +436,7 @@ const commands: Record<string, (args: string[]) => Promise<void>> = {
 };
 
 if (!command || !commands[command]) {
-  console.log("usage: shipnote <fetch|import|select|draft|media|review|approve|mark-used|status|eval-add|eval> [--date YYYY-MM-DD] [--run ID] [--top N]");
+  console.log("usage: shipnote <fetch|import|remember|import-voice|select|draft|media|review|approve|mark-used|status|eval-add|eval> [--date YYYY-MM-DD] [--run ID] [--top N]");
   process.exit(command ? 1 : 0);
 }
 
