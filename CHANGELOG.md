@@ -6,6 +6,10 @@ Each release's notes are taken from its section below, so write entries for what
 
 ## [Unreleased]
 
+### Changed
+
+- Drafts use plain, active sentences under 25 words that lead with the concrete result, cite the exact file, command, flag, or number from the diff, and avoid filler and hype words.
+
 ## [0.3.1] - 2026-10-31
 
 ### Added

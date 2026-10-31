@@ -10,8 +10,12 @@ const longBody = Array.from({ length: 650 }, () => "word").join(" ");
 const blog = (shas: string[], body = longBody) => ({ title: "Retry", summary: "Summary", body, shas });
 
 describe("buildPrompt", () => {
-  test("asks each tweet to open with a hook", () => {
-    expect(buildPrompt(commits, "story", "")).toContain("Start each tweet with a hook");
+  test("asks for plain, active, concrete prose", () => {
+    expect(buildPrompt(commits, "story", "")).toContain("Write like a working engineer");
+  });
+
+  test("bans hype words and pre-announcements", () => {
+    expect(buildPrompt(commits, "story", "")).toContain("Cut filler and hype");
   });
 
   test("asks for no tweets in theme mode", () => {
