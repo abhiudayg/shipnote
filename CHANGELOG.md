@@ -6,6 +6,8 @@ Each release's notes are taken from its section below, so write entries for what
 
 ## [Unreleased]
 
+## [0.3.1] - 2026-10-31
+
 ### Added
 
 - `shipnote import-docs <dir>` imports a folder of markdown files as drafting sources, so a day with no commits can still produce posts. Documents get no GitHub link.
