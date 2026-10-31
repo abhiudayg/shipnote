@@ -6,6 +6,12 @@ Each release's notes are taken from its section below, so write entries for what
 
 ## [Unreleased]
 
+## [0.2.1] - 2026-10-31
+
+### Changed
+
+- The release workflow publishes each version to npm as well as GitHub Packages.
+
 ## [0.2.0] - 2026-10-31
 
 ### Added
