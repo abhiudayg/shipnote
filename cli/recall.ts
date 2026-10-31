@@ -1,3 +1,5 @@
+import { debug } from "./log";
+
 export type Fact = {
   id: string;
   text: string;
@@ -46,6 +48,7 @@ export async function recallFacts(run: Runner, query: string | null, tag: string
 }
 
 export async function runCommand(argv: string[]): Promise<string> {
+  debug(argv.join(" "));
   const proc = Bun.spawn(argv, { stdout: "pipe", stderr: "pipe" });
   const [stdout, stderr, code] = await Promise.all([
     new Response(proc.stdout).text(),

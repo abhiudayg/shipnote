@@ -17,3 +17,7 @@
 
 ## Where to look
 - Prompt and checks: `cli/draft.ts`. Writing files: `cli/output.ts`. Repeat detection: `cli/similarity.ts`. Evaluation: `cli/eval.ts`.
+
+## Negative controls
+- cli/fixtures/negative-controls.json has four invented claims that reuse commit words. All four are rejected.
+- Three controls must be kept: two supported tweets and one known miss, a tweet with a single false word among several true ones, which the 40% limit lets through.

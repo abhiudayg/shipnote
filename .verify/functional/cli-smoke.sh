@@ -44,7 +44,8 @@ check() {
 }
 
 check "select ranks the fixture archive"
-bun "$CLI" select --date 2026-10-31 | grep -q "3 commits" || { echo "select did not rank 3 commits"; exit 1; }
+select_out=$(bun "$CLI" select --date 2026-10-31)
+echo "$select_out" | grep -q "3 commits" || { echo "select did not rank 3 commits"; exit 1; }
 
 check "draft writes story drafts for a fake agent"
 bun "$CLI" draft --date 2026-10-31
@@ -54,7 +55,8 @@ test -f drafts/2026-10-31/meta.json
 grep -q '"kept": 2' drafts/2026-10-31/meta.json || { echo "meta.json does not record 2 kept items"; exit 1; }
 
 check "approve records the draft id"
-bun "$CLI" approve tweet-1 --date 2026-10-31 | grep -q "Nothing was posted"
+approve_out=$(bun "$CLI" approve tweet-1 --date 2026-10-31)
+echo "$approve_out" | grep -q "Nothing was posted"
 grep -q "tweet-1" drafts/2026-10-31/approved.json
 
 check "a rerun that rejects the new tweet keeps approvals"
@@ -70,6 +72,49 @@ fi
 grep -q "interactive terminal" review-decide.out
 
 check "stats reports the approval rate"
-bun "$CLI" stats | grep -q "approval rate"
+stats_out=$(bun "$CLI" stats)
+echo "$stats_out" | grep -q "approval rate"
+
+check "help lists commands and per-command options"
+help_out=$(bun "$CLI" --help)
+echo "$help_out" | grep -q "Commands:"
+draft_help=$(bun "$CLI" draft --help)
+echo "$draft_help" | grep -q "Usage:  shipnote draft"
+
+check "verbose flag writes debug lines to stderr"
+verbose_out=$(bun "$CLI" select --date 2026-10-31 -v 2>&1 >/dev/null)
+echo "$verbose_out" | grep -q "debug: command select"
+
+check "a stalled agent is stopped at its timeout and leaves no process"
+STALL="$WORK/stall"
+mkdir -p "$STALL/archive/2026-10-31/abhiudayg"
+cp "$ROOT/cli/fixtures/sample.patch" "$STALL/archive/2026-10-31/abhiudayg/dustmap.patch"
+cat > "$STALL/stall-agent.ts" <<EOF
+const child = Bun.spawn(["sleep", "297"], { stdout: "inherit", stderr: "inherit" });
+await child.exited;
+EOF
+cat > "$STALL/shipnote.toml" <<EOF
+[agent]
+provider = "stall"
+
+[agent.providers.stall]
+command = "bun"
+args = ["$STALL/stall-agent.ts"]
+prompt_mode = "stdin"
+model = "stall-model"
+effort = "low"
+
+[budget]
+timeout_seconds = 2
+max_retries = 0
+EOF
+(cd "$STALL" && SHIPNOTE_CLI="$CLI" HOME="$WORK/home" bun -e '
+const started = Date.now();
+const p = Bun.spawn(["bun", process.env.SHIPNOTE_CLI, "draft", "--date", "2026-10-31"], { stdout: "pipe", stderr: "pipe" });
+const outcome = await Promise.race([p.exited, Bun.sleep(15000).then(() => "stuck")]);
+if (outcome === "stuck") { p.kill(); console.error("draft did not exit within 15s"); process.exit(1); }
+console.log("exited after", Math.round((Date.now() - started) / 1000), "s");
+')
+if pgrep -f "sleep 297" > /dev/null; then pkill -f "sleep 297"; echo "agent process left running"; exit 1; fi
 
 echo "functional smoke passed"
