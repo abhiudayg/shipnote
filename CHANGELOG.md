@@ -6,7 +6,7 @@ Each release's notes are taken from its section below, so write entries for what
 
 ## [Unreleased]
 
-## [0.1.1] - 2026-10-31
+## [0.2.0] - 2026-10-31
 
 ### Added
 
