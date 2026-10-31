@@ -49,4 +49,5 @@ Steps:
 ## Code
 
 - `cli/approval.ts`, `cli/approval.test.ts`
+- `cli/tune.ts`, `cli/tune.test.ts`
 - `cli/shipnote.ts` (shared entry point; this feature owns the `review`, `approve`, `status`, `mark-used`, and `stats` commands)

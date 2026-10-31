@@ -36,6 +36,17 @@ export function readApproved(path: string): string[] {
   return value;
 }
 
+export type Decisions = Record<string, "approved" | "rejected">;
+
+export function readDecisions(path: string): Decisions {
+  if (!existsSync(path)) return {};
+  return JSON.parse(readFileSync(path, "utf8")) as Decisions;
+}
+
+export function recordDecision(path: string, id: string, decision: "approved" | "rejected"): void {
+  writeFileSync(path, `${JSON.stringify({ ...readDecisions(path), [id]: decision }, null, 2)}\n`);
+}
+
 export function writeApproved(path: string, approved: string[]): void {
   writeFileSync(path, `${JSON.stringify(approved, null, 2)}\n`);
 }

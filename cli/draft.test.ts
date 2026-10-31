@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import { readFileSync } from "node:fs";
-import { BLOG_WORDS, buildPrompt, check, chooseMode, parseDraft, promptSha256, sourceWords, type Draft } from "./draft";
+import { BLOG_WORDS, buildPrompt, check, chooseMode, openingWords, parseDraft, promptSha256, repairNotes, sourceWords, type Draft } from "./draft";
 import { parsePatch } from "./patch";
 
 const commits = parsePatch(readFileSync(new URL("./fixtures/sample.patch", import.meta.url), "utf8"), "abhiudayg/dustmap");
@@ -241,5 +241,23 @@ describe("chooseMode", () => {
 
   test("uses theme mode when nothing was selected", () => {
     expect(chooseMode(undefined, 0.6)).toBe("theme");
+  });
+});
+
+describe("repairNotes", () => {
+  test("returns nothing when no tweet was rejected", () => {
+    expect(repairNotes({ tweets: [{ text: "Retry 3 times.", shas: [retrySha] }], blog: null }, [])).toBeNull();
+  });
+
+  test("lists each rejected tweet with its reason", () => {
+    const draft: Draft = { tweets: [{ text: "Retries now run more often.", shas: [retrySha] }], blog: null };
+    const notes = repairNotes(draft, [{ item: "tweet 1", reason: "names no file, command, or number" }]);
+    expect(notes).toContain('"Retries now run more often." was rejected: names no file, command, or number.');
+  });
+});
+
+describe("openingWords", () => {
+  test("counts the words in the first sentence only", () => {
+    expect(openingWords("Retries run 3 times. Then they back off for a long while.")).toBe(4);
   });
 });

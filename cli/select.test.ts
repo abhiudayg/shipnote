@@ -110,3 +110,15 @@ describe("topicKey area", () => {
     expect(topicKey("o/r", ["b/x.go", "a/y.go"])).toBe("o/r/a");
   });
 });
+
+describe("topicKey depth", () => {
+  test("uses two folder levels when files sit deeper", () => {
+    expect(topicKey("o/r", ["internal/session/a.go", "internal/session/b.go", "internal/policy/c.go"])).toBe(
+      "o/r/internal/session",
+    );
+  });
+
+  test("uses the file itself for a file at the repository root", () => {
+    expect(topicKey("o/r", ["README.md"])).toBe("o/r/README.md");
+  });
+});
