@@ -14,6 +14,10 @@ describe("buildPrompt", () => {
     expect(buildPrompt(commits, "story", "")).toContain("Start each tweet with a hook");
   });
 
+  test("asks each tweet to name the specific change", () => {
+    expect(buildPrompt(commits, "story", "")).toContain("Name the specific change");
+  });
+
   test("asks for no tweets in theme mode", () => {
     expect(buildPrompt(commits, "theme", "")).toContain("Write no tweets");
   });

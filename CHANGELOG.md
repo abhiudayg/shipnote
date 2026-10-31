@@ -6,6 +6,10 @@ Each release's notes are taken from its section below, so write entries for what
 
 ## [Unreleased]
 
+### Changed
+
+- Drafts name the specific file, command, flag, number, or behavior from the diff, and avoid vague verbs such as "ensure" and "streamline."
+
 ## [0.3.1] - 2026-10-31
 
 ### Added
