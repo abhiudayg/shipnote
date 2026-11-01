@@ -6,6 +6,11 @@ Each release's notes are taken from its section below, so write entries for what
 
 ## [Unreleased]
 
+### Fixed
+
+- A version string such as 1.27.2 in a tweet must appear in the commit the tweet cites. Before, its parts were checked separately, so a claim from another commit could pass.
+- A draft run keeps one tweet per commit. A tweet that cites a commit an earlier tweet covers is rejected, including in the repair pass.
+
 ## [0.3.2] - 2026-11-01
 
 ### Added

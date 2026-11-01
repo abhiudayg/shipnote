@@ -131,7 +131,7 @@ function citesKnown(shas: string[], known: KnownCommits): string | null {
 
 const BACKTICKED = /`([^`\n]+)`/g;
 const FILE_NAME = /\b[\w./-]+\.(?:ts|tsx|js|jsx|mjs|json|toml|yml|yaml|md|sh|go|py|rs|sql|css|html|svg)\b/g;
-const NUMBER = /\b\d{2,}\b/g;
+const NUMBER = /\b\d+(?:\.\d+)+\b|\b\d{2,}\b/g;
 
 function claimedNames(text: string): string[] {
   const names = [...text.matchAll(BACKTICKED)].map((match) => match[1].replace(/\(\)$/, ""));
@@ -228,13 +228,19 @@ export function promptSha256(): string {
   return createHash("sha256").update(template).digest("hex");
 }
 
+export function coveredCommit(tweet: Tweet, claimed: Set<string>): string | null {
+  return tweet.shas.some((sha) => claimed.has(sha)) ? "cites a commit an earlier tweet already covers" : null;
+}
+
 export function check(draft: Draft, commits: Commit[], recent: RecentPost[] = []): Checked {
   const known: KnownCommits = new Map(commits.map((c) => [c.sha, c]));
   const rejections: Rejection[] = [];
 
+  const claimed = new Set<string>();
   const tweets = draft.tweets.slice(0, MAX_TWEETS).filter((tweet, index) => {
-    const reason = tweetProblem(tweet, known, recent);
+    const reason = coveredCommit(tweet, claimed) ?? tweetProblem(tweet, known, recent);
     if (reason) rejections.push({ item: `tweet ${index + 1}`, reason });
+    else tweet.shas.forEach((sha) => claimed.add(sha));
     return reason === null;
   });
 
