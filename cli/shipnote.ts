@@ -14,7 +14,7 @@ import { recallFacts, runCommand } from "./recall";
 import { score } from "./select";
 import { agentCommand, loadConfig, type Config, type Provider } from "./config";
 import { mergeLedger, readLedger, releaseShas, validateShas, writeLedger } from "./ledger";
-import { BLOG_WORDS, buildPrompt, check, chooseMode, type Checked, type Draft, MAX_TWEET_CHARS, MAX_TWEETS, openingWords, parseDraft, promptSha256, repairNotes, sourceWords } from "./draft";
+import { BLOG_WORDS, buildPrompt, check, chooseMode, type Checked, coveredCommit, type Draft, MAX_TWEET_CHARS, MAX_TWEETS, openingWords, parseDraft, promptSha256, repairNotes, sourceWords } from "./draft";
 import { parsePatch, type Commit } from "./patch";
 import { writeDrafts, writeFailure, type RunMeta } from "./output";
 import { REPEAT_WINDOW_DAYS, type RecentPost } from "./similarity";
@@ -554,7 +554,13 @@ async function repairTweets(
   if (checkBudget(tokens, provider.usdPerMillionTokens, budget)) return skipped;
   try {
     const raw = await withProgress("repairing rejected tweets", () => callWithRetries(provider, repairPrompt, budget));
-    const repaired = check({ tweets: parseDraft(raw).tweets, blog: null }, chosen, recent);
+    const covered = new Set(first.draft.tweets.flatMap((tweet) => tweet.shas));
+    const incoming = parseDraft(raw).tweets;
+    const fresh = incoming.filter((tweet) => coveredCommit(tweet, covered) === null);
+    const duplicates = incoming
+      .filter((tweet) => coveredCommit(tweet, covered) !== null)
+      .map(() => ({ item: "repair", reason: "cites a commit an earlier tweet already covers" }));
+    const repaired = check({ tweets: fresh, blog: null }, chosen, recent);
     return {
       result: {
         draft: { tweets: [...first.draft.tweets, ...repaired.draft.tweets].slice(0, MAX_TWEETS), blog: first.draft.blog },
@@ -563,6 +569,7 @@ async function repairTweets(
           ...repaired.rejections
             .filter((rejection) => rejection.item !== "blog")
             .map((rejection) => ({ item: `repair ${rejection.item}`, reason: rejection.reason })),
+          ...duplicates,
         ],
       },
       tokens,

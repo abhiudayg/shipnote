@@ -53,7 +53,7 @@ export function buildPrompt(commits: Commit[], mode: Mode, voice: string): strin
     task,
     `The blog is one post of ${BLOG_WORDS.min} to ${BLOG_WORDS.max} words.`,
     "Every tweet and the blog must list the full SHA of each commit it describes in its shas field. Do not put SHAs in the text. Do not quote diffs verbatim. Claim only what the commit shows.",
-    "Write like a working engineer explaining a change to a colleague: plain, direct, and specific. Put the concrete result first, in active voice with a named actor. Use the exact file, command, flag, number, or behavior from the diff. Keep each sentence under 25 words, with one claim per sentence.",
+    "Write like a working engineer explaining a change to a colleague: plain, direct, and specific. Open each tweet with the problem the change solves, in one concrete sentence: a failure, a cost, a risk, or a question a developer would ask. Then give the fix in active voice with a named actor, and the result or tradeoff in the last sentence. End with one question a developer can answer in a line, when the change raises a real one. Use the exact file, command, flag, number, or behavior from the diff. Keep each sentence under 25 words, with one claim per sentence.",
     `Cut filler and hype such as ${HYPE_WORDS.join(", ")}. Do not announce what follows; state it. If the diff shows what the change does not cover, say so.`,
     style,
     ...blocks,
@@ -131,7 +131,7 @@ function citesKnown(shas: string[], known: KnownCommits): string | null {
 
 const BACKTICKED = /`([^`\n]+)`/g;
 const FILE_NAME = /\b[\w./-]+\.(?:ts|tsx|js|jsx|mjs|json|toml|yml|yaml|md|sh|go|py|rs|sql|css|html|svg)\b/g;
-const NUMBER = /\b\d{2,}\b/g;
+const NUMBER = /\b\d+(?:\.\d+)+\b|\b\d{2,}\b/g;
 
 function claimedNames(text: string): string[] {
   const names = [...text.matchAll(BACKTICKED)].map((match) => match[1].replace(/\(\)$/, ""));
@@ -228,13 +228,19 @@ export function promptSha256(): string {
   return createHash("sha256").update(template).digest("hex");
 }
 
+export function coveredCommit(tweet: Tweet, claimed: Set<string>): string | null {
+  return tweet.shas.some((sha) => claimed.has(sha)) ? "cites a commit an earlier tweet already covers" : null;
+}
+
 export function check(draft: Draft, commits: Commit[], recent: RecentPost[] = []): Checked {
   const known: KnownCommits = new Map(commits.map((c) => [c.sha, c]));
   const rejections: Rejection[] = [];
 
+  const claimed = new Set<string>();
   const tweets = draft.tweets.slice(0, MAX_TWEETS).filter((tweet, index) => {
-    const reason = tweetProblem(tweet, known, recent);
+    const reason = coveredCommit(tweet, claimed) ?? tweetProblem(tweet, known, recent);
     if (reason) rejections.push({ item: `tweet ${index + 1}`, reason });
+    else tweet.shas.forEach((sha) => claimed.add(sha));
     return reason === null;
   });
 

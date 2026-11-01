@@ -87,8 +87,9 @@ describe("check", () => {
   });
 
   test("keeps at most three tweets", () => {
-    const tweet = { text: "Retry 3 times.", shas: [retrySha] };
-    const result = check({ tweets: [tweet, tweet, tweet, tweet], blog: null }, commits);
+    const copies = [0, 1, 2, 3].map((index) => ({ ...commits[0], sha: String(index).repeat(40) }));
+    const tweets = copies.map((commit) => ({ text: "Retry 3 times.", shas: [commit.sha] }));
+    const result = check({ tweets, blog: null }, copies);
     expect(result.draft.tweets).toHaveLength(3);
   });
 
@@ -259,5 +260,41 @@ describe("repairNotes", () => {
 describe("openingWords", () => {
   test("counts the words in the first sentence only", () => {
     expect(openingWords("Retries run 3 times. Then they back off for a long while.")).toBe(4);
+  });
+});
+
+describe("version strings and commit coverage", () => {
+  test("drops a tweet whose version string is absent from the cited commit", () => {
+    const draft: Draft = { tweets: [{ text: "Requires Go 1.27.2 now.", shas: [retrySha] }], blog: null };
+    expect(check(draft, commits).rejections[0].reason).toContain("1.27.2");
+  });
+
+  test("drops a second tweet that cites a commit an earlier tweet already covers", () => {
+    const draft: Draft = {
+      tweets: [
+        { text: "Retries now run 3 times.", shas: [retrySha] },
+        { text: "Retry 3 times.", shas: [retrySha] },
+      ],
+      blog: null,
+    };
+    const result = check(draft, commits);
+    expect(result.draft.tweets).toHaveLength(1);
+    expect(result.rejections.filter((rejection) => rejection.item.startsWith("tweet"))).toEqual([
+      { item: "tweet 2", reason: "cites a commit an earlier tweet already covers" },
+    ]);
+  });
+});
+
+describe("problem-first openings", () => {
+  test("asks each tweet to open with the problem the change solves", () => {
+    expect(buildPrompt(commits, "story", "")).toContain("Open each tweet with the problem the change solves");
+  });
+});
+
+describe("story-beat openings and endings", () => {
+  test("asks each tweet to end with the result and a question a developer can answer", () => {
+    const prompt = buildPrompt(commits, "story", "");
+    expect(prompt).toContain("the result or tradeoff in the last sentence");
+    expect(prompt).toContain("one question a developer can answer in a line");
   });
 });
