@@ -26,3 +26,4 @@
 - The agent call ends at its deadline even if a child process keeps the output pipe open. Only the agent's own process group is killed; a child that leaves the group keeps running.
 - Openings: each tweet opens with the problem the change solves (the prompt rule is in `buildPrompt`). Repeated runs on the same data give near-identical output, because the inputs, the candidates, and the prompt are all fixed, and nothing asks for variation.
 - One tweet per commit: `coveredCommit` in `cli/draft.ts` rejects a tweet that cites a commit an earlier kept tweet covers. The repair pass applies the same rule against the first pass.
+- Story beats: each tweet is problem, then the change that fixes it, then the result or tradeoff, and ends with one question a developer can answer in a line when the change raises one. The rule is in `buildPrompt` and rests on practitioner guidance, not measured engagement.

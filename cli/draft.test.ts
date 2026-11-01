@@ -290,3 +290,11 @@ describe("problem-first openings", () => {
     expect(buildPrompt(commits, "story", "")).toContain("Open each tweet with the problem the change solves");
   });
 });
+
+describe("story-beat openings and endings", () => {
+  test("asks each tweet to end with the result and a question a developer can answer", () => {
+    const prompt = buildPrompt(commits, "story", "");
+    expect(prompt).toContain("the result or tradeoff in the last sentence");
+    expect(prompt).toContain("one question a developer can answer in a line");
+  });
+});

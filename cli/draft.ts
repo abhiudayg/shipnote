@@ -53,7 +53,7 @@ export function buildPrompt(commits: Commit[], mode: Mode, voice: string): strin
     task,
     `The blog is one post of ${BLOG_WORDS.min} to ${BLOG_WORDS.max} words.`,
     "Every tweet and the blog must list the full SHA of each commit it describes in its shas field. Do not put SHAs in the text. Do not quote diffs verbatim. Claim only what the commit shows.",
-    "Write like a working engineer explaining a change to a colleague: plain, direct, and specific. Open each tweet with the problem the change solves, in one concrete sentence: a failure, a cost, a risk, or a question a developer would ask. Then give the fix in active voice with a named actor. Use the exact file, command, flag, number, or behavior from the diff. Keep each sentence under 25 words, with one claim per sentence.",
+    "Write like a working engineer explaining a change to a colleague: plain, direct, and specific. Open each tweet with the problem the change solves, in one concrete sentence: a failure, a cost, a risk, or a question a developer would ask. Then give the fix in active voice with a named actor, and the result or tradeoff in the last sentence. End with one question a developer can answer in a line, when the change raises a real one. Use the exact file, command, flag, number, or behavior from the diff. Keep each sentence under 25 words, with one claim per sentence.",
     `Cut filler and hype such as ${HYPE_WORDS.join(", ")}. Do not announce what follows; state it. If the diff shows what the change does not cover, say so.`,
     style,
     ...blocks,
