@@ -284,3 +284,9 @@ describe("version strings and commit coverage", () => {
     ]);
   });
 });
+
+describe("problem-first openings", () => {
+  test("asks each tweet to open with the problem the change solves", () => {
+    expect(buildPrompt(commits, "story", "")).toContain("Open each tweet with the problem the change solves");
+  });
+});

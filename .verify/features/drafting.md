@@ -52,7 +52,7 @@ Steps:
 
 ## Code
 
-- `cli/draft.ts`, `cli/draft.test.ts`
+- `cli/draft.ts`, `cli/draft.test.ts`: the prompt (including the problem-first opening rule), parsing, the commit and grounding checks (version strings are checked whole), one tweet per commit, the quality gate, and the repair notes.
 - `cli/output.ts`, `cli/output.test.ts`
 - `cli/similarity.ts`, `cli/similarity.test.ts`
 - `cli/platforms.ts`, `cli/platforms.test.ts`

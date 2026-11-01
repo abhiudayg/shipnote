@@ -24,3 +24,5 @@
 - Code gate (`qualityProblem` in `cli/draft.ts`): a tweet is dropped when it uses a hype word, its first sentence is over 25 words, or it names no file, command, or number. The word list is `HYPE_WORDS`, shared with the prompt.
 - Repair loop: when tweets are rejected, one repair call is made with the rejected text and reasons (`repairNotes` in `cli/draft.ts`, `repairTweets` in `cli/shipnote.ts`). Its passing tweets join the first pass's. The repair is skipped when the budget refuses it, and a failed repair call is recorded in `review.md`.
 - The agent call ends at its deadline even if a child process keeps the output pipe open. Only the agent's own process group is killed; a child that leaves the group keeps running.
+- Openings: each tweet opens with the problem the change solves (the prompt rule is in `buildPrompt`). Repeated runs on the same data give near-identical output, because the inputs, the candidates, and the prompt are all fixed, and nothing asks for variation.
+- One tweet per commit: `coveredCommit` in `cli/draft.ts` rejects a tweet that cites a commit an earlier kept tweet covers. The repair pass applies the same rule against the first pass.
