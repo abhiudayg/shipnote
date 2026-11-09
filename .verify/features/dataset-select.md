@@ -16,7 +16,7 @@ shipnote reads a dated archive of exported commits, skips commits that should no
   - Intent: keep posts about work that is new and worth a post.
   - Behaviour: applies each rule in order and records the first reason that matches.
   - Outcome: skipped commits are counted by reason in the `select` output.
-- `ranking`: Scores each remaining commit on architecture paths, a piecewise effort curve over cleaned lines, narrative, and cross-module scope. Drafting then applies a per-repo decay so one repo cannot take every slot.
+- `ranking`: Scores each remaining commit on architecture paths, a piecewise effort curve over cleaned lines, narrative (git trailers do not count), and cross-module scope. Drafting then applies a per-repo decay so one repo cannot take every slot.
   - Intent: put the most substantial, best-explained work first, and spread the top slots across repos.
   - Behaviour: sorts by score descending. Drafting re-orders candidates with `decayByRepo`, multiplying a repo's later picks by 0.55 each.
   - Outcome: the top commit has the highest score and appears first. On the 2026-11-01 archive, the top 12 spans 12 repos.

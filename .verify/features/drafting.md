@@ -52,12 +52,13 @@ Steps:
 
 ## Code
 
-- `cli/draft.ts`: the prompt (including the problem-first opening rule, the story-beat rule, and the one-reader and no-tells rules), parsing, the commit and grounding checks (version strings are checked whole), one tweet per commit, the quality gate (hype words and the em-dash check), the repair notes, and the candidate order (`rankCandidates`).
+- `cli/draft.ts`: the prompt (including the problem-first opening rule, the story-beat rule, and the one-reader and no-tells rules), parsing, the commit and grounding checks (version strings are checked whole), one tweet per commit, the quality gate (hype words and the em-dash check), the repair notes, the candidate order (`rankCandidates`), the story rule (`chooseMode`: two qualifying candidates), and the arch-first diff order before the 2,500-character cut (`prioritizedDiff`).
 - `cli/draft.test.ts`: tests for the prompt rules, the grounding checks, one tweet per commit, the quality gate, and the repair notes.
 - `cli/output.ts`, `cli/output.test.ts`
 - `cli/similarity.ts`, `cli/similarity.test.ts`
 - `cli/platforms.ts`, `cli/platforms.test.ts`
-- `cli/eval.ts`, `cli/eval.test.ts`
+- `cli/eval.ts`
+- `cli/eval.test.ts`
 - `cli/budget.ts`, `cli/budget.test.ts`
 - `cli/config.ts`, `cli/config.test.ts`
 - `shipnote.example.toml`

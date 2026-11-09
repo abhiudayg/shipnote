@@ -10,6 +10,23 @@ SHA=1111111111111111111111111111111111111111
 rm -rf "$WORK"
 mkdir -p "$WORK/home" "$WORK/archive/2026-10-31/abhiudayg"
 cp cli/fixtures/sample.patch "$WORK/archive/2026-10-31/abhiudayg/dustmap.patch"
+cat > "$WORK/archive/2026-10-31/abhiudayg/second.patch" <<'EOF'
+commit 5555555555555555555555555555555555555555
+Date: 2026-10-30T11:00:00+05:30
+Subject: Add cache warmup at startup
+
+Warms the cache before the first request.
+
+diff --git a/src/extra.ts b/src/extra.ts
+new file mode 100644
+index 0000000..1111111
+--- /dev/null
++++ b/src/extra.ts
+@@ -0,0 +1,3 @@
++export const a = 1;
++export const b = 2;
++export const c = 3;
+EOF
 
 cat > "$WORK/fake-agent.ts" <<EOF
 const body = Array.from({ length: 650 }, () => "word").join(" ");
@@ -45,7 +62,7 @@ check() {
 
 check "select ranks the fixture archive"
 select_out=$(bun "$CLI" select --date 2026-10-31)
-echo "$select_out" | grep -q "3 commits" || { echo "select did not rank 3 commits"; exit 1; }
+echo "$select_out" | grep -q "4 commits" || { echo "select did not see 4 commits"; exit 1; }
 
 check "draft writes story drafts for a fake agent"
 bun "$CLI" draft --date 2026-10-31

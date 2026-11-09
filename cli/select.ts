@@ -23,6 +23,7 @@ const ARCH_PATH = /(^|\/)(migrations|api|routes|auth|engine|core|\.github\/workf
 const TEST_PATH = /(_test\.|\.test\.|\.spec\.|(^|\/)(tests?|__tests__)\/)/;
 const DOC_PATH = /\.(md|mdx|txt)$|^docs\//;
 const NARRATIVE_VERB = /\b(migrate|race|latency|cache|parser|security)\b/i;
+const TRAILER = /^(Signed-off-by|Co-authored-by|Reviewed-by|Change-Id|Acked-by):/;
 export const REPO_DECAY = 0.55;
 
 export type Skip = { sha: string; reason: string };
@@ -74,16 +75,24 @@ export function effortScore(lines: number): number {
   return 0.35;
 }
 
-function archScore(files: string[]): number {
-  if (files.some((file) => ARCH_PATH.test(file))) return 1;
-  if (files.every((file) => DOC_PATH.test(file) || TEST_PATH.test(file))) return 0.2;
+export function fileArch(file: string): number {
+  if (ARCH_PATH.test(file)) return 1;
+  if (DOC_PATH.test(file) || TEST_PATH.test(file)) return 0.2;
   return 0.6;
+}
+
+function archScore(files: string[]): number {
+  return files.length === 0 ? 0.2 : Math.max(...files.map(fileArch));
+}
+
+function proseLines(body: string): string[] {
+  return body.split("\n").filter((line) => line.trim() !== "" && !TRAILER.test(line));
 }
 
 function narrativeScore(commit: Commit): number {
   const words = commit.subject.trim().split(/\s+/).length;
   let value = 0.2;
-  if (commit.body.includes("\n")) value += 0.5;
+  if (proseLines(commit.body).length > 1) value += 0.5;
   if (NARRATIVE_VERB.test(`${commit.subject} ${commit.body}`)) value += 0.3;
   if (words === 1) value -= 0.4;
   return Math.min(1, Math.max(0, value));

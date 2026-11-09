@@ -15,4 +15,5 @@
 - Approving marks the draft's commits as used in `ledger.json`. Rejecting an approved draft releases them, unless another approved draft still cites them (`releaseShas` in `cli/ledger.ts`).
 - Every approve or reject is recorded in `decisions.json` beside the draft. `tune` reads those decisions and reports approval rates by tweet opening length. It suggests a length only after 20 decisions, and never changes a threshold.
 - `cli/tune.ts` holds the bucketing and the report. `tune` in `cli/shipnote.ts` reads the files.
-- The shared `cli/shipnote.ts` calls `rankCandidates` (`cli/draft.ts`) for the `draft` candidates. That is drafting's code, not this feature's. The `review`, `approve`, `status`, `mark-used`, and `stats` wiring is unchanged.
+- The shared `cli/shipnote.ts` calls `rankCandidates` and `chooseMode` (`cli/draft.ts`) for the `draft` candidates and mode. That is drafting's code, not this feature's.
+- The topic cooldown is this feature's: an approved draft blocks its topics for `TOPIC_COOLDOWN_DAYS` (7) days, in `recentTopics` in `cli/shipnote.ts`. The 30-day repeat window (`REPEAT_WINDOW_DAYS`) is separate and unchanged. The `review`, `approve`, `status`, `mark-used`, and `stats` wiring is unchanged.

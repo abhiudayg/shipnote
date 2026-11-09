@@ -156,6 +156,17 @@ describe("score", () => {
   test("scores a one-word subject below a descriptive one", () => {
     expect(score({ ...base, subject: "cleanup" })).toBeLessThan(score(base));
   });
+
+  test("does not count git trailers as narrative", () => {
+    const trailers = "Signed-off-by: A <a@example.com>\nCo-authored-by: B <b@example.com>";
+    expect(score({ ...base, body: trailers })).toBe(score({ ...base, body: "" }));
+  });
+
+  test("counts a multi-line prose body as narrative", () => {
+    expect(score({ ...base, body: "Retries now back off.\nTransient errors stop failing the export." })).toBeGreaterThan(
+      score({ ...base, body: "Retries now back off." }),
+    );
+  });
 });
 
 describe("decayByRepo", () => {

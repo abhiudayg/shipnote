@@ -50,4 +50,4 @@ Steps:
 
 - `cli/approval.ts`, `cli/approval.test.ts`
 - `cli/tune.ts`, `cli/tune.test.ts`
-- `cli/shipnote.ts` (shared entry point; this feature owns the `review`, `approve`, `status`, `mark-used`, and `stats` commands; the `draft` candidate call belongs to drafting, as `rankCandidates` in `cli/draft.ts`)
+- `cli/shipnote.ts` (shared entry point; this feature owns the `review`, `approve`, `status`, `mark-used`, and `stats` commands; the `draft` candidate and mode lines belong to drafting, as `rankCandidates` and `chooseMode` in `cli/draft.ts`; the topic cooldown (`TOPIC_COOLDOWN_DAYS`) belongs to this feature)

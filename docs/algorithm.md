@@ -43,7 +43,7 @@ Inputs use cleaned lines `L` (added + removed, minus noise) and cleaned files.
   - `600 < L ≤ 2500`: linear from 1.0 down to 0.5
   - `L > 2500`: 0.35
 - **arch**: 1.0 if any file is under `migrations/`, `api/`, `routes/`, `auth/`, `engine/`, `core/`, or `.github/workflows/`. 0.2 if every file is a doc (`.md`, `.mdx`, `.txt`, `docs/`) or a test. 0.6 otherwise.
-- **narrative**: starts at 0.2. Adds 0.5 if the body has more than one line. Adds 0.3 if the subject or body contains `migrate`, `race`, `latency`, `cache`, `parser`, or `security`. Subtracts 0.4 if the subject is one word. Clamped to `[0, 1]`.
+- **narrative**: starts at 0.2. Adds 0.5 if the body has more than one prose line. Git trailers (`Signed-off-by`, `Co-authored-by`, `Reviewed-by`, `Change-Id`, `Acked-by`) and blank lines do not count. Adds 0.3 if the subject or body contains `migrate`, `race`, `latency`, `cache`, `parser`, or `security`. Subtracts 0.4 if the subject is one word. Clamped to `[0, 1]`.
 - **scope**: the number of distinct top-level folders, capped at 4, divided by 4. Adds 0.15 when production and test files change together. Capped at 1.
 
 ## 4. Draft candidates
@@ -51,13 +51,16 @@ Inputs use cleaned lines `L` (added + removed, minus noise) and cleaned files.
 `draft` (`rankCandidates` in `cli/draft.ts`) turns the scored list into candidates:
 
 1. Keep the highest-scoring commit per topic. A topic is the repository plus the most common folder among the commit's files, two levels deep (`topicKey`).
-2. Drop topics that an approved draft covered in the last 30 days (`recentTopics` in `cli/shipnote.ts`).
+2. Drop topics that an approved draft covered in the last 7 days (`recentTopics` in `cli/shipnote.ts`, `TOPIC_COOLDOWN_DAYS`). The repeat check keeps its own 30-day window.
 3. Reorder with a per-repository decay (`decayByRepo`). Each commit's weight is its score times `0.55` raised to the number of earlier picks from its repository. Repeat until the list is empty, always taking the highest weight.
 
 ## 5. Mode and count
 
-- Mode is `story` when the top score is at least `min_story_score` (default `0.6`). Otherwise it is `theme`.
-- Story mode drafts the first `--top` candidates (default 12). Theme mode drafts a fixed number of examples.
+- Mode is `story` when at least 2 candidates have a score of at least `min_story_score` (default `0.6`). Otherwise it is `theme`. `chooseMode` in `cli/draft.ts` applies this to the candidates after the topic filter.
+- Story mode drafts the qualifying candidates, up to `--top` (default 12). Theme mode drafts a fixed number of examples.
+- Eval cases are different: each case is one story, so `caseMode` in `cli/eval.ts` marks a case as story when its top commit clears the threshold.
+
+Before the prompt cuts a commit's diff to 2,500 characters, its per-file sections are sorted by file arch weight, then by changed lines (`prioritizedDiff` in `cli/draft.ts`). The core file that earned the arch weight is kept in the prompt.
 
 ## Known limits
 

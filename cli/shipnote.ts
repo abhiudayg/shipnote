@@ -8,10 +8,9 @@ import { importPatches } from "./archive";
 import { importDocs } from "./docs";
 import { checkBudget, estimateCostUsd, estimateTokens, type Budget } from "./budget";
 import { altText, BLOG_SIZE, excerptCard, excerptMatchesDiff, firstExcerpt, TWEET_SIZE } from "./media";
-import { evaluateCase, type EvalCase, summarize } from "./eval";
+import { caseMode, evaluateCase, type EvalCase, summarize } from "./eval";
 import { importCorpus, storeFact } from "./memory";
 import { recallFacts, runCommand } from "./recall";
-import { score } from "./select";
 import { agentCommand, loadConfig, type Config, type Provider } from "./config";
 import { mergeLedger, readLedger, releaseShas, validateShas, writeLedger } from "./ledger";
 import { BLOG_WORDS, buildPrompt, check, chooseMode, type Checked, coveredCommit, type Draft, MAX_TWEET_CHARS, MAX_TWEETS, openingWords, parseDraft, promptSha256, rankCandidates, repairNotes, sourceWords } from "./draft";
@@ -31,6 +30,7 @@ const VOICE_DIR = "voice";
 const EVAL_CASES = join("eval", "cases");
 const EVAL_RESULTS = join("eval", "results");
 const THEME_EXAMPLES = 10;
+const TOPIC_COOLDOWN_DAYS = 7;
 const LEDGER = "ledger.json";
 
 const CONFIG = "shipnote.toml";
@@ -291,7 +291,7 @@ async function runEval(args: string[]): Promise<void> {
 
   if (args.includes("--dry-run")) {
     for (const evalCase of cases) {
-      const mode = chooseMode(Math.max(...evalCase.commits.map(score)), config.minStoryScore);
+      const mode = caseMode(evalCase.commits, config.minStoryScore);
       const tokens = estimateTokens(buildPrompt(evalCase.commits, mode, voice));
       console.log(`${evalCase.name}: mode ${mode} (expected ${evalCase.expectMode}), prompt about ${tokens} tokens`);
     }
@@ -509,20 +509,20 @@ function approvedClaims(day: string): Claim[] {
   return readClaims(day).filter((claim) => approved.includes(draftIds([claim.item])[0]));
 }
 
-function recentDays(date: string): string[] {
-  const cutoff = shiftDays(date, -REPEAT_WINDOW_DAYS);
+function recentDays(date: string, days: number): string[] {
+  const cutoff = shiftDays(date, -days);
   return draftDays().filter((day) => day >= cutoff && day < date);
 }
 
 function recentPosts(date: string): RecentPost[] {
-  return recentDays(date).flatMap((day) =>
+  return recentDays(date, REPEAT_WINDOW_DAYS).flatMap((day) =>
     approvedClaims(day).map((claim) => ({ date: day, id: draftIds([claim.item])[0], text: claim.text })),
   );
 }
 
 function recentTopics(date: string): Set<string> {
   return new Set(
-    recentDays(date).flatMap((day) =>
+    recentDays(date, TOPIC_COOLDOWN_DAYS).flatMap((day) =>
       approvedClaims(day).flatMap((claim) => claim.commits.map((commit) => topicKey(commit.repo ?? "", commit.files))),
     ),
   );
@@ -610,10 +610,11 @@ async function draftPosts(args: string[]): Promise<void> {
     return;
   }
   const { selected, skipped } = select(commits, currentRules(config));
-  const mode = chooseMode(selected[0]?.score, config.minStoryScore);
   const blocked = recentTopics(date);
   const candidates = rankCandidates(selected, blocked);
-  const chosen = mode === "story" ? candidates.slice(0, top) : candidates.slice(0, THEME_EXAMPLES);
+  const qualifying = candidates.filter((commit) => commit.score >= config.minStoryScore);
+  const mode = chooseMode(qualifying.length);
+  const chosen = mode === "story" ? qualifying.slice(0, top) : candidates.slice(0, THEME_EXAMPLES);
   debug(`mode ${mode}: drafting ${chosen.length} of ${candidates.length} topics from ${selected.length} selected commits`);
   if (chosen.length === 0) {
     fail("No commits passed selection, so there is nothing to draft.");

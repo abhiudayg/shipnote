@@ -1,4 +1,4 @@
-import { buildPrompt, check, chooseMode, type Mode, parseDraft } from "./draft";
+import { buildPrompt, check, type Mode, parseDraft } from "./draft";
 import type { Commit } from "./patch";
 import { score } from "./select";
 
@@ -29,13 +29,17 @@ export type Summary = {
   validationPassRate: number;
 };
 
+export function caseMode(commits: Commit[], minStoryScore: number): Mode {
+  return Math.max(...commits.map(score)) >= minStoryScore ? "story" : "theme";
+}
+
 export async function evaluateCase(
   evalCase: EvalCase,
   minStoryScore: number,
   voice: string,
   run: (prompt: string) => Promise<string>,
 ): Promise<CaseResult> {
-  const mode = chooseMode(Math.max(...evalCase.commits.map(score)), minStoryScore);
+  const mode = caseMode(evalCase.commits, minStoryScore);
   const base = {
     name: evalCase.name,
     expectMode: evalCase.expectMode,

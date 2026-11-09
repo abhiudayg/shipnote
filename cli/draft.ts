@@ -1,6 +1,6 @@
 import { createHash } from "node:crypto";
-import type { Commit } from "./patch";
-import { decayByRepo, representatives, topicOf } from "./select";
+import { type Commit, fileChurn } from "./patch";
+import { decayByRepo, fileArch, representatives, topicOf } from "./select";
 import { findRepeat, REPEAT_OVERLAP, REPEAT_WINDOW_DAYS, type RecentPost, tokens } from "./similarity";
 
 export type Tweet = { text: string; shas: string[] };
@@ -21,6 +21,7 @@ export const RUBRIC = {
 };
 
 const DIFF_CHARS = 2500;
+export const MIN_STORY_CANDIDATES = 2;
 export const HYPE_WORDS = ["very", "really", "incredibly", "seamless", "game-changer", "excited", "exciting", "effortless", "revolutionary", "supercharge"];
 const HYPE = new RegExp(`\\b(${HYPE_WORDS.join("|")})\\b`, "i");
 const MAX_FIRST_SENTENCE_WORDS = 25;
@@ -36,10 +37,24 @@ function neutralize(text: string): string {
   return text.replace(CLOSING_TAG, (tag) => tag.replace("</", "<\\/"));
 }
 
+function sectionWeight(section: string): { arch: number; lines: number } {
+  const [entry] = fileChurn(section);
+  return entry ? { arch: fileArch(entry.file), lines: entry.added + entry.removed } : { arch: 0, lines: 0 };
+}
+
+function prioritizedDiff(diff: string): string {
+  return diff
+    .split(/\n(?=diff --git )/)
+    .map((section) => ({ section, weight: sectionWeight(section) }))
+    .sort((a, b) => b.weight.arch - a.weight.arch || b.weight.lines - a.weight.lines)
+    .map((item) => item.section)
+    .join("\n");
+}
+
 export function buildPrompt(commits: Commit[], mode: Mode, voice: string): string {
   const blocks = commits.map(
     (c) =>
-      `<commit sha="${c.sha}" repo="${c.repo}">\n${neutralize(c.subject)}\n\n${neutralize(c.body)}\n\n${neutralize(c.diff.slice(0, DIFF_CHARS))}\n</commit>`,
+      `<commit sha="${c.sha}" repo="${c.repo}">\n${neutralize(c.subject)}\n\n${neutralize(c.body)}\n\n${neutralize(prioritizedDiff(c.diff).slice(0, DIFF_CHARS))}\n</commit>`,
   );
   const task =
     mode === "story"
@@ -268,6 +283,6 @@ export function sourceWords(commits: Commit[]): number {
   return commits.reduce((total, commit) => total + wordCount(`${commit.subject} ${commit.body} ${commit.diff}`), 0);
 }
 
-export function chooseMode(topScore: number | undefined, minStoryScore: number): Mode {
-  return (topScore ?? 0) >= minStoryScore ? "story" : "theme";
+export function chooseMode(qualifying: number): Mode {
+  return qualifying >= MIN_STORY_CANDIDATES ? "story" : "theme";
 }

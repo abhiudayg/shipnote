@@ -272,16 +272,27 @@ describe("reader and tells guidance", () => {
 });
 
 describe("chooseMode", () => {
-  test("uses story mode when the top commit clears the threshold", () => {
-    expect(chooseMode(0.6, 0.6)).toBe("story");
+  test("uses story mode when two candidates clear the threshold", () => {
+    expect(chooseMode(2)).toBe("story");
   });
 
-  test("uses theme mode when the top commit is below the threshold", () => {
-    expect(chooseMode(0.59, 0.6)).toBe("theme");
+  test("uses theme mode when fewer than two candidates clear the threshold", () => {
+    expect(chooseMode(1)).toBe("theme");
   });
 
-  test("uses theme mode when nothing was selected", () => {
-    expect(chooseMode(undefined, 0.6)).toBe("theme");
+  test("uses theme mode when no candidate clears the threshold", () => {
+    expect(chooseMode(0)).toBe("theme");
+  });
+});
+
+describe("arch-first diff ordering", () => {
+  test("keeps the core file that earned the arch weight when a large style diff comes first", () => {
+    const styles = `diff --git a/src/ui/styles.css b/src/ui/styles.css\n--- a/src/ui/styles.css\n+++ b/src/ui/styles.css\n@@ -0,0 +1,1500 @@\n${"+a {}\n".repeat(1500)}`;
+    const engine = "diff --git a/core/engine.ts b/core/engine.ts\n--- a/core/engine.ts\n+++ b/core/engine.ts\n@@ -0,0 +1,2 @@\n+export const x = 1;\n+export const y = 2;";
+    const commit = { ...commits[0], diff: `${styles}\n${engine}` };
+    const prompt = buildPrompt([commit], "story", "");
+    expect(prompt).toContain("diff --git a/core/engine.ts");
+    expect(prompt.indexOf("core/engine.ts")).toBeLessThan(prompt.indexOf("src/ui/styles.css"));
   });
 });
 

@@ -1,7 +1,8 @@
 import { describe, expect, test } from "bun:test";
 import { readFileSync } from "node:fs";
-import { evaluateCase, type EvalCase, summarize } from "./eval";
+import { caseMode, evaluateCase, type EvalCase, summarize } from "./eval";
 import { parsePatch } from "./patch";
+import { score } from "./select";
 
 const commits = parsePatch(readFileSync(new URL("./fixtures/sample.patch", import.meta.url), "utf8"), "abhiudayg/dustmap");
 const retrySha = "1111111111111111111111111111111111111111";
@@ -50,5 +51,17 @@ describe("summarize", () => {
 
   test("returns zeros for no cases", () => {
     expect(summarize([])).toEqual({ cases: 0, modeMatchRate: 0, parseRate: 0, shaValidRate: 0, validationPassRate: 0 });
+  });
+});
+
+describe("caseMode", () => {
+  const top = Math.max(...commits.map(score));
+
+  test("uses story mode when the case's top commit clears the threshold", () => {
+    expect(caseMode(commits, top)).toBe("story");
+  });
+
+  test("uses theme mode when no commit in the case clears the threshold", () => {
+    expect(caseMode(commits, top + 0.001)).toBe("theme");
   });
 });

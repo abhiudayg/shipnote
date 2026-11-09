@@ -51,5 +51,5 @@ Steps:
 - `cli/help.ts`, `cli/help.test.ts`
 - `cli/log.ts`
 - `cli/progress.ts`, `cli/progress.test.ts`
-- `cli/shipnote.ts` (shared entry point; this feature owns the command table, help dispatch, verbose setup, and `callAgent` spin-down; the `draft` candidate call belongs to drafting, as `rankCandidates` in `cli/draft.ts`)
+- `cli/shipnote.ts` (shared entry point; this feature owns the command table, help dispatch, verbose setup, and `callAgent` spin-down; the `draft` candidate and mode lines belong to drafting, as `rankCandidates` and `chooseMode` in `cli/draft.ts`)
 - `cli/update.ts`, `cli/update.test.ts`
