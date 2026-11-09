@@ -14,11 +14,11 @@ import { recallFacts, runCommand } from "./recall";
 import { score } from "./select";
 import { agentCommand, loadConfig, type Config, type Provider } from "./config";
 import { mergeLedger, readLedger, releaseShas, validateShas, writeLedger } from "./ledger";
-import { BLOG_WORDS, buildPrompt, check, chooseMode, type Checked, coveredCommit, type Draft, MAX_TWEET_CHARS, MAX_TWEETS, openingWords, parseDraft, promptSha256, repairNotes, sourceWords } from "./draft";
+import { BLOG_WORDS, buildPrompt, check, chooseMode, type Checked, coveredCommit, type Draft, MAX_TWEET_CHARS, MAX_TWEETS, openingWords, parseDraft, promptSha256, rankCandidates, repairNotes, sourceWords } from "./draft";
 import { parsePatch, type Commit } from "./patch";
 import { writeDrafts, writeFailure, type RunMeta } from "./output";
 import { REPEAT_WINDOW_DAYS, type RecentPost } from "./similarity";
-import { representatives, select, topicKey, topicOf, type Rules } from "./select";
+import { select, topicKey, type Rules } from "./select";
 import { withProgress } from "./progress";
 import { commandHelp, type CommandSpec, rootHelp } from "./help";
 import { debug, setVerbose } from "./log";
@@ -612,7 +612,7 @@ async function draftPosts(args: string[]): Promise<void> {
   const { selected, skipped } = select(commits, currentRules(config));
   const mode = chooseMode(selected[0]?.score, config.minStoryScore);
   const blocked = recentTopics(date);
-  const candidates = representatives(selected).filter((commit) => !blocked.has(topicOf(commit)));
+  const candidates = rankCandidates(selected, blocked);
   const chosen = mode === "story" ? candidates.slice(0, top) : candidates.slice(0, THEME_EXAMPLES);
   debug(`mode ${mode}: drafting ${chosen.length} of ${candidates.length} topics from ${selected.length} selected commits`);
   if (chosen.length === 0) {

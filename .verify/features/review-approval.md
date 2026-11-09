@@ -50,4 +50,4 @@ Steps:
 
 - `cli/approval.ts`, `cli/approval.test.ts`
 - `cli/tune.ts`, `cli/tune.test.ts`
-- `cli/shipnote.ts` (shared entry point; this feature owns the `review`, `approve`, `status`, `mark-used`, and `stats` commands)
+- `cli/shipnote.ts` (shared entry point; this feature owns the `review`, `approve`, `status`, `mark-used`, and `stats` commands; the `draft` candidate call belongs to drafting, as `rankCandidates` in `cli/draft.ts`)

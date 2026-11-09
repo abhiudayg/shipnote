@@ -12,14 +12,14 @@ shipnote reads a dated archive of exported commits, skips commits that should no
   - Intent: let a user draft from notes and docs when they have no commits to write about.
   - Behaviour: writes each `.md` file as one entry with a stable id from its path, its first `# ` heading as the subject, and its text as the diff. No GitHub link is made for a document.
   - Outcome: `select` and `draft` read the documents like commits, and the reply lines show the file path.
-- `skip-rules`: Drops merges, lockfile-only changes, used commits, and denylisted repositories.
+- `skip-rules`: Drops merges, lockfile-only changes, used commits, denylisted repositories, commits with only generated or vendored files, and commits with no source lines left after stripping.
   - Intent: keep posts about work that is new and worth a post.
   - Behaviour: applies each rule in order and records the first reason that matches.
   - Outcome: skipped commits are counted by reason in the `select` output.
-- `ranking`: Scores each remaining commit on change size, new files, and message quality.
-  - Intent: put the most substantial work first.
-  - Behaviour: scores on a log scale and sorts descending.
-  - Outcome: the top commit has the highest score and appears first.
+- `ranking`: Scores each remaining commit on architecture paths, a piecewise effort curve over cleaned lines, narrative, and cross-module scope. Drafting then applies a per-repo decay so one repo cannot take every slot.
+  - Intent: put the most substantial, best-explained work first, and spread the top slots across repos.
+  - Behaviour: sorts by score descending. Drafting re-orders candidates with `decayByRepo`, multiplying a repo's later picks by 0.55 each.
+  - Outcome: the top commit has the highest score and appears first. On the 2026-11-01 archive, the top 12 spans 12 repos.
 
 ## How to get to it (user POV)
 
@@ -50,7 +50,8 @@ Steps:
 
 - `cli/archive.ts`, `cli/archive.test.ts`
 - `cli/ledger.ts`, `cli/ledger.test.ts`
-- `cli/select.ts`, `cli/select.test.ts`
+- `cli/select.ts`
+- `cli/select.test.ts`
 - `cli/patch.ts`
 - `cli/docs.ts`, `cli/docs.test.ts`
 - `cli/fixtures/sample.patch`
