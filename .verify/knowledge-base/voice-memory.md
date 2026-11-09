@@ -12,3 +12,4 @@
 
 ## Where to look
 - Commands: `cli/memory.ts`. Recall: `cli/recall.ts`. Command wiring: `cli/shipnote.ts`.
+- The shared `cli/shipnote.ts` calls `rankCandidates` (`cli/draft.ts`) for the `draft` candidates. That is drafting's code, not this feature's. The `remember` and `import-voice` wiring is unchanged.

@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import { readFileSync } from "node:fs";
 import { parsePatch } from "./patch";
-import { type Rules, representatives, score, select, topicKey, topicOf } from "./select";
+import { decayByRepo, type Rules, representatives, score, select, topicKey, topicOf } from "./select";
 
 const sample = parsePatch(readFileSync(new URL("./fixtures/sample.patch", import.meta.url), "utf8"), "abhiudayg/dustmap");
 const retrySha = "1111111111111111111111111111111111111111";
@@ -120,5 +120,59 @@ describe("topicKey depth", () => {
 
   test("uses the file itself for a file at the repository root", () => {
     expect(topicKey("o/r", ["README.md"])).toBe("o/r/README.md");
+  });
+});
+
+const hunk = (count: number) => Array.from({ length: count }, (_, index) => `+line ${index}`).join("\n");
+const fileSection = (path: string, count: number) =>
+  `diff --git a/${path} b/${path}\n--- a/${path}\n+++ b/${path}\n@@ -0,0 +1,${count} @@\n${hunk(count)}`;
+const commitWith = (...sections: string[]) =>
+  `commit ${"4".repeat(40)}\nDate: 2026-10-29T10:00:00+05:30\nSubject: Add export retry with backoff\n\nRetries transient errors.\n\n${sections.join("\n")}\n`;
+
+describe("generated and vendored files", () => {
+  test("skips a commit whose only changes are generated or vendored files", () => {
+    const result = select([{ ...sample[0], files: ["dist/app.js"] }], rules());
+    expect(result.skipped).toEqual([{ sha: retrySha, reason: "only generated or vendored files" }]);
+  });
+
+  test("scores only source lines when generated files change too", () => {
+    const [withGenerated] = parsePatch(commitWith(fileSection("src/retry.ts", 20), fileSection("dist/bundle.js", 500)), "o/r");
+    const [sourceOnly] = parsePatch(commitWith(fileSection("src/retry.ts", 20)), "o/r");
+    expect(score(withGenerated)).toBe(score(sourceOnly));
+  });
+});
+
+describe("score", () => {
+  const [base] = parsePatch(commitWith(fileSection("src/retry.ts", 20)), "o/r");
+
+  test("prefers a focused change over a very large one", () => {
+    expect(score({ ...base, added: 300, removed: 0 })).toBeGreaterThan(score({ ...base, added: 5000, removed: 0 }));
+  });
+
+  test("ranks a change in a core directory above a docs-only change", () => {
+    expect(score({ ...base, files: ["core/engine.ts"] })).toBeGreaterThan(score({ ...base, files: ["docs/guide.md"] }));
+  });
+
+  test("scores a one-word subject below a descriptive one", () => {
+    expect(score({ ...base, subject: "cleanup" })).toBeLessThan(score(base));
+  });
+});
+
+describe("decayByRepo", () => {
+  const candidate = (sha: string, repo: string, value: number) => ({ ...sample[0], sha: sha.repeat(40), repo, score: value });
+
+  test("drops each further pick from a repo by the decay factor", () => {
+    const ranked = [
+      candidate("a", "o/one", 0.9),
+      candidate("b", "o/one", 0.8),
+      candidate("c", "o/one", 0.7),
+      candidate("d", "o/two", 0.5),
+    ];
+    expect(decayByRepo(ranked).map((item) => item.sha)).toEqual([
+      "a".repeat(40),
+      "d".repeat(40),
+      "b".repeat(40),
+      "c".repeat(40),
+    ]);
   });
 });

@@ -15,3 +15,4 @@
 - Approving marks the draft's commits as used in `ledger.json`. Rejecting an approved draft releases them, unless another approved draft still cites them (`releaseShas` in `cli/ledger.ts`).
 - Every approve or reject is recorded in `decisions.json` beside the draft. `tune` reads those decisions and reports approval rates by tweet opening length. It suggests a length only after 20 decisions, and never changes a threshold.
 - `cli/tune.ts` holds the bucketing and the report. `tune` in `cli/shipnote.ts` reads the files.
+- The shared `cli/shipnote.ts` calls `rankCandidates` (`cli/draft.ts`) for the `draft` candidates. That is drafting's code, not this feature's. The `review`, `approve`, `status`, `mark-used`, and `stats` wiring is unchanged.

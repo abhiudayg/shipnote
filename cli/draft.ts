@@ -1,5 +1,6 @@
 import { createHash } from "node:crypto";
 import type { Commit } from "./patch";
+import { decayByRepo, representatives, topicOf } from "./select";
 import { findRepeat, REPEAT_OVERLAP, REPEAT_WINDOW_DAYS, type RecentPost, tokens } from "./similarity";
 
 export type Tweet = { text: string; shas: string[] };
@@ -20,9 +21,10 @@ export const RUBRIC = {
 };
 
 const DIFF_CHARS = 2500;
-export const HYPE_WORDS = ["very", "really", "incredibly", "seamless", "game-changer", "excited", "exciting"];
+export const HYPE_WORDS = ["very", "really", "incredibly", "seamless", "game-changer", "excited", "exciting", "effortless", "revolutionary", "supercharge"];
 const HYPE = new RegExp(`\\b(${HYPE_WORDS.join("|")})\\b`, "i");
 const MAX_FIRST_SENTENCE_WORDS = 25;
+const EM_DASH = /—/;
 const CONCRETE = /`[^`\n]+`|\b[\w.-]+\.(?:ts|tsx|js|jsx|md|json|toml|yml|yaml|sh|go|rs|py|sql|css|html|svg)\b|\d/;
 export const SECRET = /ghp_[A-Za-z0-9]{20,}|AKIA[0-9A-Z]{16}|-----BEGIN [A-Z ]*PRIVATE KEY-----|sk_live_[A-Za-z0-9]{16,}/;
 
@@ -55,11 +57,16 @@ export function buildPrompt(commits: Commit[], mode: Mode, voice: string): strin
     "Every tweet and the blog must list the full SHA of each commit it describes in its shas field. Do not put SHAs in the text. Do not quote diffs verbatim. Claim only what the commit shows.",
     "Write like a working engineer explaining a change to a colleague: plain, direct, and specific. Open each tweet with the problem the change solves, in one concrete sentence: a failure, a cost, a risk, or a question a developer would ask. Then give the fix in active voice with a named actor, and the result or tradeoff in the last sentence. End with one question a developer can answer in a line, when the change raises a real one. Use the exact file, command, flag, number, or behavior from the diff. Keep each sentence under 25 words, with one claim per sentence.",
     `Cut filler and hype such as ${HYPE_WORDS.join(", ")}. Do not announce what follows; state it. If the diff shows what the change does not cover, say so.`,
+    "Write for one reader: a developer who will use or maintain this change. Make the result something that reader can use, and address them as you where it fits. Do not use em dashes, and do not use the 'not X, it's Y' contrast. Do not attack people, competitors, or other tools, and do not ask readers to follow, like, or repost.",
     style,
     ...blocks,
   ]
     .filter(Boolean)
     .join("\n\n");
+}
+
+export function rankCandidates<T extends Commit & { score: number }>(selected: T[], blocked: Set<string>): T[] {
+  return decayByRepo(representatives(selected).filter((commit) => !blocked.has(topicOf(commit))));
 }
 
 export function openingWords(text: string): number {
@@ -193,6 +200,7 @@ function firstSentence(text: string): string {
 function qualityProblem(text: string): string | null {
   const hype = hypeProblem(text);
   if (hype) return hype;
+  if (EM_DASH.test(text)) return "uses an em dash";
   const words = wordCount(firstSentence(text));
   if (words > MAX_FIRST_SENTENCE_WORDS) return `first sentence has ${words} words, over ${MAX_FIRST_SENTENCE_WORDS}`;
   return CONCRETE.test(text) ? null : "names no file, command, or number";

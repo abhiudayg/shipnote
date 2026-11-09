@@ -45,4 +45,4 @@ Steps:
 
 - `cli/memory.ts`, `cli/memory.test.ts`
 - `cli/recall.ts`, `cli/recall.test.ts`
-- `cli/shipnote.ts` (shared entry point; this feature owns the `remember` and `import-voice` commands)
+- `cli/shipnote.ts` (shared entry point; this feature owns the `remember` and `import-voice` commands; the `draft` candidate call belongs to drafting, as `rankCandidates` in `cli/draft.ts`)

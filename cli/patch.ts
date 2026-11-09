@@ -52,6 +52,24 @@ function toCommit(sha: string, repo: string, lines: string[]): Commit {
   };
 }
 
+export type FileChurn = { file: string; added: number; removed: number };
+
+export function fileChurn(diff: string): FileChurn[] {
+  const churn: FileChurn[] = [];
+  for (const line of diff.split("\n")) {
+    const match = DIFF_HEADER.exec(line);
+    if (match) {
+      churn.push({ file: match[2], added: 0, removed: 0 });
+      continue;
+    }
+    const current = churn.at(-1);
+    if (!current) continue;
+    if (line.startsWith("+") && !line.startsWith("+++")) current.added += 1;
+    else if (line.startsWith("-") && !line.startsWith("---")) current.removed += 1;
+  }
+  return churn;
+}
+
 export function parsePatch(text: string, repo: string): Commit[] {
   const commits: Commit[] = [];
   let sha: string | null = null;

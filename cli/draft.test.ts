@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import { readFileSync } from "node:fs";
-import { BLOG_WORDS, buildPrompt, check, chooseMode, openingWords, parseDraft, promptSha256, repairNotes, sourceWords, type Draft } from "./draft";
+import { BLOG_WORDS, buildPrompt, check, chooseMode, openingWords, parseDraft, promptSha256, rankCandidates, repairNotes, sourceWords, type Draft } from "./draft";
 import { parsePatch } from "./patch";
 
 const commits = parsePatch(readFileSync(new URL("./fixtures/sample.patch", import.meta.url), "utf8"), "abhiudayg/dustmap");
@@ -8,6 +8,28 @@ const retrySha = "1111111111111111111111111111111111111111";
 const mergeSha = "2222222222222222222222222222222222222222";
 const longBody = Array.from({ length: 650 }, () => "word").join(" ");
 const blog = (shas: string[], body = longBody) => ({ title: "Retry", summary: "Summary", body, shas });
+
+describe("rankCandidates", () => {
+  const candidate = (sha: string, repo: string, file: string, value: number) => ({
+    ...commits[0],
+    sha: sha.repeat(40),
+    repo,
+    files: [file],
+    score: value,
+  });
+
+  test("drops candidates whose topic is blocked and decays a repo's later picks", () => {
+    const selected = [
+      candidate("a", "o/one", "cli/x.ts", 0.9),
+      candidate("b", "o/one", "docs/y.md", 0.8),
+      candidate("c", "o/one", "core/z.ts", 0.7),
+      candidate("d", "o/two", "cli/w.ts", 0.5),
+      candidate("e", "o/two", "cli/v.ts", 0.4),
+    ];
+    const ranked = rankCandidates(selected, new Set(["o/one/core"]));
+    expect(ranked.map((item) => item.sha)).toEqual(["a".repeat(40), "d".repeat(40), "b".repeat(40)]);
+  });
+});
 
 describe("buildPrompt", () => {
   test("asks for plain, active, concrete prose", () => {
@@ -228,6 +250,24 @@ describe("quality gate", () => {
   test("drops a blog that uses a hype word", () => {
     const result = check({ tweets: [], blog: blog([retrySha], `${longBody} very`) }, commits);
     expect(result.rejections[0].reason).toContain("very");
+  });
+
+  test("drops a tweet that uses a marketing hype word added to the list", () => {
+    expect(check(tweetWith("Retries run 3 times, an effortless fix."), commits).rejections[0].reason).toContain("effortless");
+  });
+
+  test("drops a tweet that uses an em dash", () => {
+    expect(check(tweetWith("Retries run 3 times — no more stalls."), commits).rejections[0].reason).toBe("uses an em dash");
+  });
+});
+
+describe("reader and tells guidance", () => {
+  test("asks for one reader, second person, and no em dashes, contrast, attacks, or follow asks", () => {
+    const prompt = buildPrompt(commits, "story", "");
+    expect(prompt).toContain("Write for one reader");
+    expect(prompt).toContain("Do not use em dashes");
+    expect(prompt).toContain("'not X, it's Y' contrast");
+    expect(prompt).toContain("do not ask readers to follow, like, or repost");
   });
 });
 

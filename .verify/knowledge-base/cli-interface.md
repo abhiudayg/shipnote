@@ -13,3 +13,4 @@
 
 ## Where to look
 - Command table, dispatch, and agent process control: `cli/shipnote.ts`. Help text: `cli/help.ts`. Verbose flag: `cli/log.ts`. Progress: `cli/progress.ts`.
+- The shared `cli/shipnote.ts` calls `rankCandidates` (`cli/draft.ts`) for the `draft` candidates. That is drafting's code, not this feature's. The command table and dispatch are unchanged.
